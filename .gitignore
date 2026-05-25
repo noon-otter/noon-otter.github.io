@@ -3,3 +3,10 @@
 trust_integral_explorer.html
 .DS_Store
 Thumbs.db
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
