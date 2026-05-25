@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Asset catalog — Models, epicycles, trust</title>
+<style>
+  :root {
+    --bg:        #0A0B0D;
+    --bg-card:   #14171C;
+    --border:    #2a2f38;
+    --text:      #FFFFFF;
+    --muted:     #8A93A0;
+    --pink:      #ec4899;
+    --yellow:    #facc15;
+    --mint:      #2DE2A0;
+    --blue:      #5dd4e6;
+    --violet:    #b46cf0;
+    --mono:      "JetBrains Mono", "Menlo", "Consolas", monospace;
+    --sans:      "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 32px 96px; }
+  header h1 {
+    font-weight: 800; font-size: 42px; margin: 0 0 8px; letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted); font-size: 17px; max-width: 720px; margin: 0 0 8px;
+  }
+  header .meta {
+    color: var(--muted); font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.12em; text-transform: uppercase; margin-top: 28px;
+  }
+  section { margin-top: 56px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .section-head .tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; padding: 4px 8px; border-radius: 4px;
+    color: var(--bg); font-weight: 700;
+  }
+  .tag.epicycles { background: var(--yellow); }
+  .tag.models    { background: var(--blue); }
+  .tag.trust     { background: var(--pink); color: white; }
+  .tag.orch      { background: var(--mint); }
+  .section-head h2 {
+    font-size: 26px; margin: 0; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .section-head .count {
+    color: var(--muted); font-family: var(--mono); font-size: 13px; margin-left: auto;
+  }
+  .section-blurb {
+    color: var(--muted); max-width: 720px; margin: 0 0 24px; font-size: 15px;
+  }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;
+  }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 18px; text-decoration: none; color: inherit;
+    transition: border-color 120ms ease, transform 120ms ease;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .card:hover { border-color: var(--text); transform: translateY(-2px); }
+  .card .name { font-weight: 600; font-size: 15px; }
+  .card .file {
+    font-family: var(--mono); font-size: 11px; color: var(--muted); word-break: break-all;
+  }
+  .card .desc { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .card .size {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-top: auto; padding-top: 8px;
+  }
+  footer {
+    margin-top: 72px; color: var(--muted); font-size: 13px;
+    font-family: var(--mono); border-top: 1px solid var(--border); padding-top: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="meta">Asset catalog · Professional Website</div>
+  <h1>Models, epicycles, and trust</h1>
+  <p>Interactive HTML artifacts collected from across MRM Visuals, GFMI Boston Talk, and The Model Operator. Working drafts of ideas about what a model is, what an orchestration of models is, and how trust is measured between an operator and an observer.</p>
+</header>
+
+<section>
+  <div class="section-head">
+    <span class="tag epicycles">Epicycles</span>
+    <h2>What you see depends on where you stand</h2>
+    <span class="count">5 files</span>
+  </div>
+  <p class="section-blurb">The retrograde-motion explainer in five forms. Lesson: when corrections start to multiply, the fix is not a better epicycle. The fix is to reconsider the ground truth.</p>
+  <div class="grid">
+    <a class="card" href="epicycles/epicycles-explainer.html">
+      <span class="name">Epicycles explainer</span>
+      <span class="file">epicycles/epicycles-explainer.html</span>
+      <span class="desc">The puzzle / the fix / the flip / the point — the canonical long-form essay.</span>
+      <span class="size">28 KB · MRM Visuals</span>
+    </a>
+    <a class="card" href="epicycles/epicycles-talk.html">
+      <span class="name">Epicycles (talk version)</span>
+      <span class="file">epicycles/epicycles-talk.html</span>
+      <span class="desc">Talk-tuned variant from the gfmi-talk viz directory.</span>
+      <span class="size">28 KB · GFMI Boston Talk · viz</span>
+    </a>
+    <a class="card" href="epicycles/epicycles-slide-standalone.html">
+      <span class="name">Epicycles slide (standalone)</span>
+      <span class="file">epicycles/epicycles-slide-standalone.html</span>
+      <span class="desc">Slide-ready version with the control bar (orders, orbit ratio, width).</span>
+      <span class="size">22 KB · GFMI Boston Talk</span>
+    </a>
+    <a class="card" href="epicycles/epicycles-slide-talk.html">
+      <span class="name">Epicycles slide (in talk)</span>
+      <span class="file">epicycles/epicycles-slide-talk.html</span>
+      <span class="desc">The slide version embedded in the gfmi-talk deck.</span>
+      <span class="size">24 KB · GFMI Boston Talk · viz</span>
+    </a>
+    <a class="card" href="epicycles/governance-epicycles.html">
+      <span class="name">Governance epicycles</span>
+      <span class="file">epicycles/governance-epicycles.html</span>
+      <span class="desc">The epicycles lesson applied to the governance frame.</span>
+      <span class="size">39 KB · MRM Visuals</span>
+    </a>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="tag models">Models</span>
+    <h2>What a model is, and what models are made of</h2>
+    <span class="count">10 files</span>
+  </div>
+  <p class="section-blurb">Definitions, examples, algebra, and a 3D portrait of how models compose. Two concrete model instances (Black-Scholes, LLM) sit alongside the more abstract definition slides and the typed-operator view.</p>
+  <div class="grid">
+    <a class="card" href="models/model-context-graph-3d.html">
+      <span class="name">3D model context graph</span>
+      <span class="file">models/model-context-graph-3d.html</span>
+      <span class="desc">70 nodes — models, endpoints, agents, apps, datasets, experiments, jobs, environments — rotating with counter-rotating wireframe shells, halos, orbit rings.</span>
+      <span class="size">24 KB · Three.js · MRM Visuals</span>
+    </a>
+    <a class="card" href="models/model-definition-intro-slide.html">
+      <span class="name">Model definition (intro)</span>
+      <span class="file">models/model-definition-intro-slide.html</span>
+      <span class="desc">Setup slide for the model-definition section of the talk.</span>
+      <span class="size">10 KB · GFMI Boston Talk</span>
+    </a>
+    <a class="card" href="models/model-definition-slide.html">
+      <span class="name">Model definition</span>
+      <span class="file">models/model-definition-slide.html</span>
+      <span class="desc">The talk's working definition of a model.</span>
+      <span class="size">30 KB · GFMI Boston Talk</span>
+    </a>
+    <a class="card" href="models/model-algebra-slide.html">
+      <span class="name">Model algebra</span>
+      <span class="file">models/model-algebra-slide.html</span>
+      <span class="desc">Composition rules for models — the algebra slide.</span>
+      <span class="size">33 KB · GFMI Boston Talk</span>
+    </a>
+    <a class="card" href="models/typed-operator.html">
+      <span class="name">Typed operator</span>
+      <span class="file">models/typed-operator.html</span>
+      <span class="desc">Models as typed operators between input and output spaces.</span>
+      <span class="size">71 KB · MRM Visuals</span>
+    </a>
+    <a class="card" href="models/blackscholes-model-slide.html">
+      <span class="name">Black-Scholes model</span>
+      <span class="file">models/blackscholes-model-slide.html</span>
+      <span class="desc">A concrete classical-finance model instance.</span>
+      <span class="size">34 KB · GFMI Boston Talk</span>
+    </a>
+    <a class="card" href="models/llm-model-slide.html">
+      <span class="name">LLM as model</span>
+      <span class="file">models/llm-model-slide.html</span>
+      <span class="desc">A concrete LLM instance, fit into the same framing.</span>
+      <span class="size">31 KB · GFMI Boston Talk</span>
+    </a>
+    <a class="card" href="models/total-risk-space.html">
+      <span class="name">Total risk space</span>
+      <span class="file">models/total-risk-space.html</span>
+      <span class="desc">The risk space that models live inside.</span>
+      <span class="size">41 KB · MRM Visuals</span>
+    </a>
+    <a class="card" href="models/risk-surface.html">
+      <span class="name">Risk surface (3D)</span>
+      <span class="file">models/risk-surface.html</span>
+      <span class="desc">Three-dimensional risk surface from the talk's viz dir.</span>
+      <span class="size">678 KB · GFMI Boston Talk · viz</span>
+    </a>
+    <a class="card" href="models/governance-dip.html">
+      <span class="name">Governance dip</span>
+      <span class="file">models/governance-dip.html</span>
+      <span class="desc">The governance-quality dip diagram.</span>
+      <span class="size">57 KB · MRM Visuals</span>
+    </a>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="tag trust">Trust integral</span>
+    <h2>The trust integral explorer</h2>
+    <span class="count">1 file</span>
+  </div>
+  <p class="section-blurb">Interactive blob explorer for T = c · f — coverage as overlap, fidelity as centroid alignment. Drag control points, retoggle real/predicted, watch the integral move. Latest build includes solid body fills and solid-overlap behaviour when highlight-fidelity is off.</p>
+  <div class="grid">
+    <a class="card" href="trust-integral/trust-integral-explorer-latest.html">
+      <span class="name">Trust integral explorer</span>
+      <span class="file">trust-integral/trust-integral-explorer-latest.html</span>
+      <span class="desc">Latest build from The Model Operator with today's edits.</span>
+      <span class="size">70 KB · The Model Operator</span>
+    </a>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="tag orch">Orchestration</span>
+    <h2>What an orchestration of models looks like</h2>
+    <span class="count">1 file</span>
+  </div>
+  <p class="section-blurb">Placeholder, marked as such — the existing artifact is an empty frame with the title "What an orchestration between these objects can look like." Next canvas to fill.</p>
+  <div class="grid">
+    <a class="card" href="orchestration/orchestration.html">
+      <span class="name">Orchestration (placeholder)</span>
+      <span class="file">orchestration/orchestration.html</span>
+      <span class="desc">Empty frame. Blank space for the orchestration diagram.</span>
+      <span class="size">1.5 KB · GFMI Boston Talk · viz</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  Collected from MRM Visuals, GFMI Boston Talk (incl. gfmi-talk/viz), and The Model Operator. Multiple copies kept where they differ (slide vs. talk vs. standalone) so version drift is visible.
+</footer>
+
+</div>
+</body>
+</html>

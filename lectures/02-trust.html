@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lecture 02 — What trust is · Nicholas Goble</title>
+<meta name="description" content="Trust as the integral of coverage times fidelity. T = c · f. Two blobs and the integral between them." />
+<link rel="stylesheet" href="../site.css" />
+</head>
+<body data-accent="indigo">
+<div class="wrap-narrow">
+
+  <header class="site-header">
+    <div class="brand"><a href="../index.html">Nicholas Goble</a></div>
+    <nav>
+      <a href="../index.html">Lab</a>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <article>
+
+    <div class="lecture-meta">Lecture 02 · Trust</div>
+    <h1 class="lecture-title">What trust is.</h1>
+    <p class="lecture-lead">Trust is not a feeling. It is a measurable quantity between a model and an observer, built from two ingredients: how much the observer's relevant region is covered by the model's claims (coverage), and how well the model's centre of mass aligns with the observer's (fidelity). Trust is their integral.</p>
+
+    <figure class="lecture-embed">
+      <iframe src="../assets/trust-integral/trust-integral-explorer-latest.html" loading="lazy" title="Trust integral explorer — drag the model and observer blobs to see coverage, fidelity, and the trust integral T = c · f update live."></iframe>
+      <figcaption class="caption">
+        <span>Interactive: drag the blobs · toggle highlights · switch palettes</span>
+        <a href="../assets/trust-integral/trust-integral-explorer-latest.html" class="inline" target="_blank" rel="noopener">Open in new tab ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="prose">
+
+      <h2>Two objects, not one</h2>
+      <p class="draft">[DRAFT — your claim] Trust requires two parties, not one. There is the model M and there is the observer M̂ — the thing that is reading the model, asking it questions, deciding whether to act on its outputs. Both are typed operators (Lecture 01). Trust is a quantity defined over the pair (M, M̂), not over M alone.</p>
+
+      <h2>Coverage as overlap</h2>
+      <p class="draft">[DRAFT] Coverage c is the proportion of the observer's relevant region that the model actually addresses. Drag M̂ into a region where M has nothing to say and c collapses. Drag it into M's body and c saturates. Coverage is geometric: it lives in the overlap of two regions.</p>
+
+      <h2>Fidelity as centroid alignment</h2>
+      <p class="draft">[DRAFT] Fidelity f is the alignment of the centres of mass — the agreement, within the covered region, between what the model says and what the observer expects. Coverage without fidelity is a model that talks loudly about the right topic but says the wrong things. Fidelity without coverage is a model that is precisely right about a region nobody asked about.</p>
+
+      <h2>Why the product, not the sum</h2>
+      <p class="draft">[DRAFT] T = c · f, not c + f, because each ingredient is necessary. A model with zero coverage is not partly trustworthy; it is untrustworthy. A model with zero fidelity inside its coverage is worse than no model. The product enforces the conjunction. The integral aggregates this conjunction across the observer's full domain of concern.</p>
+
+      <h2>Trust is not confidence</h2>
+      <p class="draft">[DRAFT] The model's reported confidence is an artifact of the model. Trust is an artifact of the relationship. Calibration is a property of M; trust is a property of (M, M̂). Conflating them is one of the most common, and most expensive, mistakes in model risk practice.</p>
+
+      <h2>What this lets us do</h2>
+      <p class="draft">[DRAFT] Once trust is a measurable quantity, governance becomes a real engineering discipline rather than a vibes exercise. You can compute it. You can monitor it. You can write down what should happen when it drops. Lecture 04 picks up there.</p>
+
+    </div>
+
+    <nav class="lecture-nav">
+      <a class="prev" href="01-models.html">
+        <span class="dir">← Previous</span>
+        <span class="label">Lecture 01 · What a model is</span>
+      </a>
+      <a class="next" href="03-cycles.html">
+        <span class="dir">Next →</span>
+        <span class="label">Lecture 03 · Cycles</span>
+      </a>
+    </nav>
+
+  </article>
+
+  <footer class="site-footer">
+    <span>© Nicholas Goble · working drafts</span>
+    <span>nicholasgoble.com</span>
+  </footer>
+
+</div>
+</body>
+</html>

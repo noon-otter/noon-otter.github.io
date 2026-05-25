@@ -1,13 +1,88 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <title>Nick Goble</title>
-  <style>
-    body { font-family: -apple-system, sans-serif; max-width: 600px; margin: 100px auto; padding: 20px; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nicholas Goble — An Idea Lab</title>
+<meta name="description" content="An idea lab on what a model is, what trust is, and the relationships between them." />
+<link rel="stylesheet" href="site.css" />
 </head>
 <body>
-  <h1>hello</h1>
-  <p>site under construction</p>
+<div class="wrap">
+
+  <header class="site-header">
+    <div class="brand"><a href="index.html">Nicholas Goble</a></div>
+    <nav>
+      <a href="index.html">Lab</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="kicker">An idea lab</div>
+    <h1>Models, observers,<br/>and the trust between them.</h1>
+    <p class="tagline">Working drafts of a formal language for what a model is, what an observer is, and how trust can be measured between them.</p>
+    <p class="sub">Each card is a live demo. Click to read the lecture.</p>
+  </section>
+
+  <section class="grid">
+
+    <a class="card" data-accent="sky" href="lectures/01-models.html">
+      <div class="preview">
+        <iframe src="assets/models/model-context-graph-3d.html" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <div class="veil"></div>
+      </div>
+      <div class="body">
+        <div class="meta">Lecture 01 · Models</div>
+        <h2>What a model is</h2>
+        <p class="sub">A typed operator on a context. Inputs, outputs, and the frame that holds both. The ground floor everything else stands on.</p>
+      </div>
+    </a>
+
+    <a class="card" data-accent="indigo" href="lectures/02-trust.html">
+      <div class="preview">
+        <iframe src="assets/trust-integral/trust-integral-explorer-latest.html" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <div class="veil"></div>
+      </div>
+      <div class="body">
+        <div class="meta">Lecture 02 · Trust</div>
+        <h2>What trust is</h2>
+        <p class="sub">T = c · f. Coverage and fidelity, model and observer. Two blobs and the integral between them.</p>
+      </div>
+    </a>
+
+    <a class="card" data-accent="saffron" href="lectures/03-cycles.html">
+      <div class="preview">
+        <iframe src="assets/epicycles/epicycles-explainer.html" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <div class="veil"></div>
+      </div>
+      <div class="body">
+        <div class="meta">Lecture 03 · Cycles</div>
+        <h2>Epicycles</h2>
+        <p class="sub">When corrections start to multiply, the fix is not a better epicycle. The fix is to reconsider the ground truth.</p>
+      </div>
+    </a>
+
+    <a class="card" data-accent="emerald" href="lectures/04-risk.html">
+      <div class="preview">
+        <iframe src="assets/models/risk-surface.html" loading="lazy" tabindex="-1" aria-hidden="true"></iframe>
+        <div class="veil"></div>
+      </div>
+      <div class="body">
+        <div class="meta">Lecture 04 · Risk</div>
+        <h2>Risk surfaces</h2>
+        <p class="sub">Where models live. The 3D portrait of the space governance is actually trying to chart.</p>
+      </div>
+    </a>
+
+  </section>
+
+  <footer class="site-footer">
+    <span>© Nicholas Goble · working drafts</span>
+    <span>nicholasgoble.com</span>
+  </footer>
+
+</div>
 </body>
 </html>

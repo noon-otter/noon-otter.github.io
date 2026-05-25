@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lecture 01 — What a model is · Nicholas Goble</title>
+<meta name="description" content="A model is not the function. It's a typed operator on a context — inputs, outputs, and the frame that holds both." />
+<link rel="stylesheet" href="../site.css" />
+</head>
+<body data-accent="sky">
+<div class="wrap-narrow">
+
+  <header class="site-header">
+    <div class="brand"><a href="../index.html">Nicholas Goble</a></div>
+    <nav>
+      <a href="../index.html">Lab</a>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <article>
+
+    <div class="lecture-meta">Lecture 01 · Models</div>
+    <h1 class="lecture-title">What a model is.</h1>
+    <p class="lecture-lead">A model is not a function. It is a typed operator on a context — the inputs it accepts, the outputs it produces, and the frame that holds both. Get this object right and almost everything else in this lab falls out as a theorem on top.</p>
+
+    <figure class="lecture-embed">
+      <iframe src="../assets/models/model-context-graph-3d.html" loading="lazy" title="3D model context graph — 70 nodes connecting models, endpoints, agents, apps, datasets, experiments, jobs, environments."></iframe>
+      <figcaption class="caption">
+        <span>Live: 3D model context graph</span>
+        <a href="../assets/models/model-context-graph-3d.html" class="inline" target="_blank" rel="noopener">Open in new tab ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="prose">
+
+      <h2>The operator</h2>
+      <p class="draft">[DRAFT — your claim] A model is an operator M : A → B between two typed spaces. The temptation is to think of M as "the function f" — the equation, the weights, the trained artifact. That is a category error. The operator is the whole gesture: domain, codomain, the mapping, and the context that lets you say what A and B even mean.</p>
+
+      <h2>Types and contexts</h2>
+      <p class="draft">[DRAFT] The types A and B are not given. They are chosen. A Black-Scholes operator takes (S, K, r, σ, T) into a real number called "price." A language model takes a token sequence into a distribution over next tokens. The types encode what you are willing to ask the model and what you are willing to receive back. Choosing the types is half of the modeling.</p>
+      <p class="draft">[DRAFT] The context is the third object. A model in isolation is a mathematical object; a model deployed is an operator with a context — the dataset that fit it, the endpoint that exposes it, the agent that calls it, the environment it runs in. The 3D graph above is a portrait of that context, pulled out into its irreducible parts.</p>
+
+      <h2>Composition</h2>
+      <p class="draft">[DRAFT] If M₁ : A → B and M₂ : B → C are typed operators, their composition M₂ ∘ M₁ : A → C is again a typed operator. This is the algebra. Most "AI systems" are not single models; they are compositions. Naming the operators and their types is the first move toward reasoning about the whole.</p>
+
+      <h2>Two instances: Black-Scholes and the LLM</h2>
+      <p class="draft">[DRAFT] Side by side, a 1973 PDE-derived option pricer and a 2024 transformer fit identically into this frame. Different types, different contexts, same definitional shape. That is not a coincidence — it is the point. The framework is supposed to span them.</p>
+
+      <h2>What is not in the operator</h2>
+      <p class="draft">[DRAFT] The operator does not contain its own observer. It does not contain its own purpose. It does not contain the trust someone places in it. Those are separate objects, defined relative to the operator. Lecture 02 picks up there.</p>
+
+    </div>
+
+    <nav class="lecture-nav">
+      <a class="prev disabled" aria-disabled="true">
+        <span class="dir">← Previous</span>
+        <span class="label">(this is the first lecture)</span>
+      </a>
+      <a class="next" href="02-trust.html">
+        <span class="dir">Next →</span>
+        <span class="label">Lecture 02 · What trust is</span>
+      </a>
+    </nav>
+
+  </article>
+
+  <footer class="site-footer">
+    <span>© Nicholas Goble · working drafts</span>
+    <span>nicholasgoble.com</span>
+  </footer>
+
+</div>
+</body>
+</html>

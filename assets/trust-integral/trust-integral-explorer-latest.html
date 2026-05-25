@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trust Integral Explorer — The Model Operator</title>
+<style>
+:root {
+  --bg: #fafaf6;
+  --panel: #ffffff;
+  --ink: #18181b;
+  --muted: #6b7280;
+  /* Default palette (emerald) chosen so the two blob fills multiply to a
+     forest green: sky #38bdf8 × saffron #fbbf24 → approx #1f8d20.
+     This is subtractive (CMY) color theory: sky-cyan absorbs red light,
+     saffron-yellow absorbs blue light, so the overlap reflects only green.
+     The CSS vars below are overwritten by setTheme() on init. */
+  --model: #db2777;            /* pink-600 (UI text) — overwritten by setTheme */
+  --model-soft: rgba(236, 72, 153, 0.16);
+  --model-swatch: #ec4899;     /* blob-fill colour for UI swatches */
+  --observer: #a16207;         /* yellow-700 (UI text — readable on white) */
+  --observer-soft: rgba(250, 204, 21, 0.18);
+  --observer-swatch: #facc15;
+  --observer-stroke: #ca8a04;  /* blob boundary stroke colour */
+  --overlap-swatch: #e83a0c;   /* multiply-result colour for UI accents */
+  --overlap-pulse: rgba(232, 58, 12, 0.18);  /* keyframe ring colour */
+  --border: #e5e7eb;
+  --good: #047857;
+  --good-soft: #d1fae5;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --serif: 'Charter', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  padding: 22px 26px 60px;
+  line-height: 1.45;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+h1 { font-family: var(--serif); font-weight: 600; margin: 0 0 2px; font-size: 26px; letter-spacing: -0.01em; }
+.subtitle { color: var(--muted); font-style: italic; margin: 0 0 12px; font-size: 13px; }
+.intuition {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.intuition b { color: var(--ink); font-weight: 600; }
+.intuition .m { color: var(--model); font-weight: 600; }
+.intuition .o { color: var(--observer); font-weight: 600; }
+/* ===== Two-column main layout ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ===== Column 1: Controls ===== */
+.col-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 16px;
+}
+.ctrl-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.ctrl-card .head {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+.ctrl-card .btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.ctrl-card .btn-row.tight { gap: 4px; }
+
+.slider-block { margin-bottom: 8px; }
+.slider-block:last-child { margin-bottom: 0; }
+.slider-block .label {
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.slider-block .label .name { color: var(--ink); }
+.slider-block .label .hint { color: var(--muted); font-style: italic; font-size: 10.5px; margin-left: 6px; }
+.slider-block .label b { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+.slider-block input[type=range] { width: 100%; }
+.slider-block .scale-ref {
+  font-size: 10px; color: var(--muted); font-family: var(--mono);
+  display: flex; justify-content: space-between; margin-top: 2px;
+}
+.slider-block .scale-ref span { font-style: italic; }
+
+.pill {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+  padding: 4px 10px; font-size: 11.5px; cursor: pointer; user-select: none;
+  white-space: nowrap;
+}
+.pill:hover { background: #f3f3ef; }
+.pill.align {
+  background: var(--ink); color: white; border-color: var(--ink); font-weight: 600;
+}
+.pill.align:hover { background: #000; }
+.pill.reseed { border-color: var(--ink); color: var(--ink); }
+/* Theme select dropdown */
+.theme-select {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 24px;
+}
+.theme-select:focus { outline: 2px solid var(--ink); outline-offset: -1px; }
+.theme-swatches {
+  display: flex; gap: 4px; margin-top: 6px; align-items: center;
+}
+.theme-swatches .sw {
+  width: 16px; height: 16px; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.08) inset;
+}
+.theme-swatches .arrow { color: var(--muted); font-size: 11px; }
+/* Overlap swatch IS the color picker — clicking it opens the native picker */
+.theme-swatches input[type="color"].sw-input {
+  width: 16px; height: 16px;
+  padding: 0; margin: 0; border: none;
+  background: transparent; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  border-radius: 50%;
+}
+.theme-swatches input[type="color"].sw-input::-webkit-color-swatch-wrapper {
+  padding: 0; border-radius: 50%;
+}
+.theme-swatches input[type="color"].sw-input::-webkit-color-swatch {
+  border: none; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.08) inset;
+}
+.theme-swatches input[type="color"].sw-input::-moz-color-swatch {
+  border: none; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.08) inset;
+}
+/* Blob visibility toggles — at the top of the editor */
+.blob-toggles {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 10px;
+}
+.blob-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--panel);
+  font-family: var(--sans); font-size: 12.5px; font-weight: 600;
+  cursor: pointer; user-select: none;
+  transition: opacity 0.12s ease;
+}
+.blob-toggle .swatch {
+  width: 12px; height: 12px; border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.06) inset;
+}
+.blob-toggle.m  { color: var(--model);    border-color: var(--model); }
+.blob-toggle.m  .swatch { background: var(--model-swatch); }
+.blob-toggle.mh { color: var(--observer); border-color: var(--observer-stroke); }
+.blob-toggle.mh .swatch { background: var(--observer-swatch); }
+.blob-toggle[data-on="false"] {
+  opacity: 0.38;
+  text-decoration: line-through;
+  border-style: dashed;
+}
+/* Effect toggles (coverage / fidelity highlights) — distinct from visibility */
+.blob-toggle.fx {
+  color: var(--muted);
+  border-color: var(--border);
+  background: var(--panel);
+}
+.blob-toggle.fx[data-on="false"] {
+  opacity: 1;                 /* don't dim — they're effects, not visibility */
+  text-decoration: none;
+  border-style: solid;
+}
+.blob-toggle.fx[data-on="true"] {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.blob-toggle.fx .swatch {
+  width: 10px; height: 10px; border-radius: 2px;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.10) inset;
+}
+.blob-toggle.fx.cov .swatch {
+  background: var(--overlap-swatch);
+}
+.blob-toggle.fx.fid .swatch {
+  background: conic-gradient(from 0deg, var(--model-swatch), var(--observer-swatch), var(--model-swatch));
+}
+@keyframes fx-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 0 4px var(--overlap-pulse); }
+}
+.blob-toggle.fx.cov[data-on="true"] {
+  animation: fx-pulse 1.8s ease-in-out infinite;
+}
+
+/* M̂ — proper hat typesetting (combining circumflex over capital M
+   sits too far right). Place a centred hat via pseudo-element. */
+.mhat {
+  position: relative;
+  display: inline-block;
+  padding-right: 0.04em;
+}
+.mhat::before {
+  content: "\02C6";  /* modifier letter circumflex (ˆ) */
+  position: absolute;
+  left: 0; right: 0;
+  top: -0.18em;       /* sits right on the M's crown */
+  text-align: center;
+  font-weight: 900;   /* was 400 — punchier hat */
+  font-style: normal;
+  font-size: 1.05em;  /* was 0.92em — slightly bigger so the boldness reads */
+  line-height: 1;
+  pointer-events: none;
+}
+code .mhat::before { top: -0.16em; font-size: 1.0em; }
+
+/* ===== Column 2: Editor + results ===== */
+.col-results { display: flex; flex-direction: column; gap: 12px; }
+
+.editor-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 12px 8px;
+}
+.editor-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.editor-hint b { color: var(--ink); font-style: normal; font-weight: 600; }
+.editor-hint .m { color: var(--model); font-weight: 600; font-style: normal; }
+.editor-hint .o { color: var(--observer); font-weight: 600; font-style: normal; }
+#editor {
+  display: block;
+  width: 100%;
+  background: linear-gradient(180deg, #fcfcf8 0%, #f5f5f0 100%);
+  border-radius: 8px;
+  cursor: default;
+  touch-action: none;
+}
+
+.results-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.results-card h3 {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 0 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+}
+.metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.metric-row.headline { grid-template-columns: 1fr 1fr 1.25fr 1.25fr; margin-bottom: 6px; }
+.metric {
+  background: #f9f9f4;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 8px;
+  text-align: center;
+}
+.metric .k {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.metric .v {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 1px;
+}
+.metric.huge .v { font-size: 15px; }
+.metric.T { background: #ecfdf5; border-color: #a7f3d0; }
+.metric.D { background: #fef3c7; border-color: #fde68a; }
+
+.regime {
+  padding: 9px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+  line-height: 1.4;
+}
+.regime b { font-weight: 600; }
+.regime.auto { background: var(--good-soft); color: var(--good); border-color: #a7f3d0; }
+.regime.samp { background: var(--warn-soft); color: var(--warn); border-color: #fde68a; }
+.regime.prior { background: var(--bad-soft); color: var(--bad); border-color: #fecaca; }
+
+.foot {
+  margin-top: 24px; color: var(--muted); font-size: 11px;
+  text-align: center; line-height: 1.55; font-style: italic;
+}
+
+@media (max-width: 1000px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .col-controls { position: static; }
+}
+</style>
+</head>
+<body>
+
+<h1>Trust Integral Explorer</h1>
+<p class="subtitle">Live blob editor for T = c·f. Companion to <i>The Trust Functional</i> (Goble 2026).</p>
+
+<div class="intuition">
+  <b>The picture.</b> Both blobs live in output space Y. The <span class="m">model M's real behavior</span> is what the deployed operator actually does; the <span class="o">observer's predicted behavior <span class="mhat">M</span></span> is what the observer thinks M will do.
+  Each blob has a <b>boundary</b> (its behavioral support) and a <b>center of mass</b> (the average prediction Ē[Y], the dot inside).
+  &nbsp;<b>Coverage c</b> is the overlap of the two blobs (the τ-inflated observer must cover the model). <b>Fidelity f</b> is the closeness of the two centers of mass.
+  Trust T = c · f. Both factors must be high.
+</div>
+
+<!-- ============ MAIN TWO-COLUMN LAYOUT ============ -->
+<div class="main-grid">
+
+  <!-- COLUMN 1: CONTROLS -->
+  <div class="col-controls">
+
+    <div class="ctrl-card">
+      <div class="head">Quick actions</div>
+      <div class="btn-row">
+        <button class="pill align" id="align" title="Set observer = model. c, f, T all → 1.">⇆ Align shapes (<span class="mhat">M</span> ← M)</button>
+        <button class="pill reseed" id="reseed">Reseed blobs</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:6px;line-height:1.4;">
+        Align makes the observer match the model exactly — a perfect baseline. Reseed regenerates blob shapes while keeping positions and sizes.
+      </div>
+    </div>
+
+    <div class="ctrl-card">
+      <div class="head">Palette</div>
+      <select id="theme-select" class="theme-select" title="Swap the subtractive-multiply colour pair used for M and M̂">
+        <option value="emerald" selected>Emerald (sky × saffron → green)</option>
+        <option value="cobalt">Cobalt (cyan × fuchsia → blue)</option>
+        <option value="aurora">Aurora (mint × rose → sky)</option>
+        <option value="iris">Iris (pink × sky → indigo)</option>
+      </select>
+      <div class="theme-swatches" id="theme-swatches">
+        <span class="sw" id="sw-M"></span>
+        <span class="arrow">×</span>
+        <span class="sw" id="sw-Mh"></span>
+        <span class="arrow">=</span>
+        <input type="color" id="overlap-color" class="sw-input" title="Click to choose the overlap result colour — fake color theory for effect">
+        <button type="button" id="overlap-reset" class="pill" style="margin-left:auto;font-size:10.5px;padding:2px 8px;" title="Reset overlap to the theme's natural multiply result">↺</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:6px;line-height:1.4;">
+        Click the third swatch to override the overlap colour — decoupled from the input pair, so you can do "indigo + orange = cyan" or whatever lands. The multiply still drives the density gradient underneath.
+      </div>
+    </div>
+
+    <div class="ctrl-card">
+      <div class="head">Parameters</div>
+
+      <div class="slider-block">
+        <div class="label">
+          <span class="name">Tolerance τ <span class="hint">— inflates observer to form V<sub>τ</sub></span></span>
+          <b id="tau_v">12</b>
+        </div>
+        <input type="range" id="tau" min="0" max="80" step="1" value="12">
+        <div class="scale-ref"><span>0 (strict)</span><span>80 (lax)</span></div>
+      </div>
+
+      <div class="slider-block">
+        <div class="label">
+          <span class="name">Required T* <span class="hint">— materiality threshold for trust</span></span>
+          <b id="Tstar_v">0.85</b>
+        </div>
+        <input type="range" id="Tstar" min="0.50" max="1.00" step="0.01" value="0.85">
+        <div class="scale-ref">
+          <span>low stakes ≈ 0.70</span><span>capital-affecting ≈ 0.95</span>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.45;border-top:1px solid var(--border);padding-top:8px;">
+        <b style="color:var(--ink);font-style:normal;">Note on stakes:</b> the stakes weight w<sub>L</sub>(x,ω) in the trust functional is currently uniform across Y in this explorer — it only enters by setting where you place T*. Higher stakes ⇒ higher T*.
+      </div>
+    </div>
+
+    <div class="ctrl-card">
+      <div class="head">Presets</div>
+      <div class="btn-row tight">
+        <button class="pill" data-preset="reset">Reset</button>
+        <button class="pill" data-preset="wide-jack">Wide &amp; Jack</button>
+        <button class="pill" data-preset="knight-pre">Knight pre</button>
+        <button class="pill" data-preset="knight-post">Knight Aug 1</button>
+        <button class="pill" data-preset="credit-c1">Credit c₁</button>
+        <button class="pill" data-preset="credit-c12">Credit c₁₂</button>
+        <button class="pill" data-preset="credit-c4">Credit c₄</button>
+        <button class="pill" data-preset="automation-bias">Robodebt</button>
+      </div>
+      <div id="preset-note" style="font-size:11px;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.4;min-height:32px;">
+        Pick a preset, then sculpt the blobs in the editor to explore.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COLUMN 2: EDITOR + RESULTS -->
+  <div class="col-results">
+
+    <div class="editor-wrap">
+      <div class="blob-toggles">
+        <button class="blob-toggle m"  id="toggle-M"  data-on="true" type="button"
+                title="Show or hide the real behavior blob">
+          <span class="swatch"></span> Show real behavior M
+        </button>
+        <button class="blob-toggle mh" id="toggle-Mh" data-on="true" type="button"
+                title="Show or hide the predicted behavior blob (and its τ-tolerance halo)">
+          <span class="swatch"></span> Show predicted behavior <span class="mhat">M</span>
+        </button>
+        <button class="blob-toggle fx cov" id="toggle-Cov" data-on="false" type="button"
+                title="Highlight the overlap of M ∩ M̂τ — the region used to compute coverage c">
+          <span class="swatch"></span> Highlight coverage
+        </button>
+        <button class="blob-toggle fx fid" id="toggle-Fid" data-on="false" type="button"
+                title="Show 6 concentric contour layers from each blob's average behavior out to its boundary edge">
+          <span class="swatch"></span> Highlight fidelity
+        </button>
+      </div>
+      <div class="editor-hint">
+        <b>Drag a <span class="m">model</span> or <span class="o">observer</span> blob's edge to stretch it</b> · drag the inside to move the whole blob · drag the center dot to reposition the mean
+      </div>
+      <canvas id="editor"></canvas>
+    </div>
+
+    <div class="results-card">
+      <h3>Live metrics</h3>
+      <div class="metric-row headline">
+        <div class="metric"><div class="k">c (coverage)</div><div class="v" id="m_c">—</div></div>
+        <div class="metric"><div class="k">f (fidelity)</div><div class="v" id="m_f">—</div></div>
+        <div class="metric huge T"><div class="k">T = c · f</div><div class="v" id="m_T">—</div></div>
+        <div class="metric huge D"><div class="k">Δ = max(0, T*−T)</div><div class="v" id="m_D">—</div></div>
+      </div>
+      <div class="metric-row">
+        <div class="metric"><div class="k">area M</div><div class="v" id="m_areaM">—</div></div>
+        <div class="metric"><div class="k">area <span class="mhat">M</span></div><div class="v" id="m_areaMh">—</div></div>
+        <div class="metric"><div class="k">overlap M ∩ <span class="mhat">M</span><sub>τ</sub></div><div class="v" id="m_overlap">—</div></div>
+        <div class="metric"><div class="k">d (centroid)</div><div class="v" id="m_d">—</div></div>
+      </div>
+    </div>
+
+    <div id="regime" class="regime">—</div>
+
+  </div>
+
+</div>
+<!-- ============ /MAIN TWO-COLUMN ============ -->
+
+<div class="foot">
+  Built from <i>The Trust Functional</i> (Goble 2026). Polygon area via shoelace; overlap via 96×96 grid sampling. CoM moves freely within blob boundary; fidelity decays linearly with d.
+  <br>HITL regime per Construction 5.1 / §7.6: Δ = 0 → automated · 0 &lt; Δ ≤ 0.25 → sampling · Δ &gt; 0.25 → prior verification.
+</div>
+
+<script>
+// ============================================================
+//  Trust Integral Explorer — interactive blob editor (v4)
+//  Catmull-Rom spline blobs with 10 control points, smooth Bézier rendering.
+// ============================================================
+
+const CANVAS_H = 500;
+const CONTROL_POINTS = 4;              // 4-node starting blob (smooth Catmull-Rom)
+const SPLINE_SAMPLES_PER_SEG = 16;      // dense sampling since each segment is large
+const HIT_VERTEX_PX = 22;              // larger hit zone — handles are farther apart
+const HIT_COM_PX = 12;
+const OVERLAP_GRID = 96;
+
+// ---- Deterministic RNG ----
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeBlob(cx, cy, radius, seed) {
+  const rand = mulberry32(seed);
+  const points = [];
+  // Start near the top, walk clockwise. With only 4 nodes, keep the perturbation
+  // small so blobs read as smooth round shapes by default. Catmull-Rom through
+  // 4 points on a circle slightly under-shoots true circumference, so we boost
+  // the nominal radius a touch to compensate.
+  const r0 = radius * 1.10;
+  for (let i = 0; i < CONTROL_POINTS; i++) {
+    const angle = (i / CONTROL_POINTS) * Math.PI * 2 - Math.PI / 2;
+    const r = r0 * (0.94 + rand() * 0.12);
+    points.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+  }
+  return { controlPoints: points, comX: cx, comY: cy };
+}
+
+function cloneBlob(b) {
+  return {
+    controlPoints: b.controlPoints.map(p => [p[0], p[1]]),
+    comX: b.comX,
+    comY: b.comY,
+  };
+}
+
+// ---- Catmull-Rom spline expansion (smooth closed loop) ----
+// Returns the spline's polygon approximation by sampling each segment.
+function expandSpline(controlPoints, samplesPerSegment = SPLINE_SAMPLES_PER_SEG) {
+  const N = controlPoints.length;
+  const out = [];
+  for (let i = 0; i < N; i++) {
+    const P0 = controlPoints[(i - 1 + N) % N];
+    const P1 = controlPoints[i];
+    const P2 = controlPoints[(i + 1) % N];
+    const P3 = controlPoints[(i + 2) % N];
+    for (let s = 0; s < samplesPerSegment; s++) {
+      const t = s / samplesPerSegment;
+      const t2 = t * t, t3 = t2 * t;
+      const x = 0.5 * ((2 * P1[0]) +
+                       (-P0[0] + P2[0]) * t +
+                       (2*P0[0] - 5*P1[0] + 4*P2[0] - P3[0]) * t2 +
+                       (-P0[0] + 3*P1[0] - 3*P2[0] + P3[0]) * t3);
+      const y = 0.5 * ((2 * P1[1]) +
+                       (-P0[1] + P2[1]) * t +
+                       (2*P0[1] - 5*P1[1] + 4*P2[1] - P3[1]) * t2 +
+                       (-P0[1] + 3*P1[1] - 3*P2[1] + P3[1]) * t3);
+      out.push([x, y]);
+    }
+  }
+  return out;
+}
+
+// Trace the closed Bézier path through Catmull-Rom control points.
+// Each segment becomes a cubic Bézier with control handles derived from neighbors.
+function tracePathSpline(ctx, controlPoints) {
+  const N = controlPoints.length;
+  ctx.beginPath();
+  ctx.moveTo(controlPoints[0][0], controlPoints[0][1]);
+  for (let i = 0; i < N; i++) {
+    const P0 = controlPoints[(i - 1 + N) % N];
+    const P1 = controlPoints[i];
+    const P2 = controlPoints[(i + 1) % N];
+    const P3 = controlPoints[(i + 2) % N];
+    const c1x = P1[0] + (P2[0] - P0[0]) / 6;
+    const c1y = P1[1] + (P2[1] - P0[1]) / 6;
+    const c2x = P2[0] - (P3[0] - P1[0]) / 6;
+    const c2y = P2[1] - (P3[1] - P1[1]) / 6;
+    ctx.bezierCurveTo(c1x, c1y, c2x, c2y, P2[0], P2[1]);
+  }
+  ctx.closePath();
+}
+
+// Same as tracePathSpline but does NOT call beginPath — used to add a second
+// subpath to an existing path (e.g. inner + outer ring for an annular halo
+// via even-odd fill).
+function tracePathSplineSub(ctx, controlPoints) {
+  const N = controlPoints.length;
+  ctx.moveTo(controlPoints[0][0], controlPoints[0][1]);
+  for (let i = 0; i < N; i++) {
+    const P0 = controlPoints[(i - 1 + N) % N];
+    const P1 = controlPoints[i];
+    const P2 = controlPoints[(i + 1) % N];
+    const P3 = controlPoints[(i + 2) % N];
+    const c1x = P1[0] + (P2[0] - P0[0]) / 6;
+    const c1y = P1[1] + (P2[1] - P0[1]) / 6;
+    const c2x = P2[0] - (P3[0] - P1[0]) / 6;
+    const c2y = P2[1] - (P3[1] - P1[1]) / 6;
+    ctx.bezierCurveTo(c1x, c1y, c2x, c2y, P2[0], P2[1]);
+  }
+  ctx.closePath();
+}
+
+
+// Convenience: the polygon used for math.
+function blobPoly(b) { return expandSpline(b.controlPoints); }
+
+// ---- Polygon math (on expanded splines) ----
+function polyArea(verts) {
+  let A = 0;
+  for (let i = 0; i < verts.length; i++) {
+    const [x1, y1] = verts[i];
+    const [x2, y2] = verts[(i + 1) % verts.length];
+    A += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(A) / 2;
+}
+
+function polyCentroid(verts) {
+  let cx = 0, cy = 0, A = 0;
+  for (let i = 0; i < verts.length; i++) {
+    const [x1, y1] = verts[i];
+    const [x2, y2] = verts[(i + 1) % verts.length];
+    const cross = x1 * y2 - x2 * y1;
+    A += cross;
+    cx += (x1 + x2) * cross;
+    cy += (y1 + y2) * cross;
+  }
+  A /= 2;
+  if (Math.abs(A) < 1e-6) {
+    let mx = 0, my = 0;
+    for (const [x, y] of verts) { mx += x; my += y; }
+    return [mx / verts.length, my / verts.length];
+  }
+  return [cx / (6 * A), cy / (6 * A)];
+}
+
+function pointInPoly(px, py, verts) {
+  let inside = false;
+  for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+    const [xi, yi] = verts[i];
+    const [xj, yj] = verts[j];
+    if (((yi > py) !== (yj > py)) &&
+        (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// Inflate control points radially from their centroid (used for the τ halo).
+function inflateControlPoints(controlPoints, amount) {
+  let cx = 0, cy = 0;
+  for (const [x, y] of controlPoints) { cx += x; cy += y; }
+  cx /= controlPoints.length; cy /= controlPoints.length;
+  return controlPoints.map(([x, y]) => {
+    const dx = x - cx, dy = y - cy;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return [x, y];
+    return [x + (dx / len) * amount, y + (dy / len) * amount];
+  });
+}
+
+function bbox(verts) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [x, y] of verts) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { minX, maxX, minY, maxY };
+}
+
+function overlapArea(v1, v2, gridN) {
+  const a = bbox(v1), b = bbox(v2);
+  const minX = Math.max(a.minX, b.minX), maxX = Math.min(a.maxX, b.maxX);
+  const minY = Math.max(a.minY, b.minY), maxY = Math.min(a.maxY, b.maxY);
+  if (maxX <= minX || maxY <= minY) return 0;
+  const dx = (maxX - minX) / gridN, dy = (maxY - minY) / gridN;
+  let count = 0;
+  for (let i = 0; i < gridN; i++) {
+    const sx = minX + (i + 0.5) * dx;
+    for (let j = 0; j < gridN; j++) {
+      const sy = minY + (j + 0.5) * dy;
+      if (pointInPoly(sx, sy, v1) && pointInPoly(sx, sy, v2)) count++;
+    }
+  }
+  return count * dx * dy;
+}
+
+// ---- State ----
+const state = {
+  M:  makeBlob(330, 240, 130, 7),
+  Mh: makeBlob(570, 240, 120, 13),
+  tau: 14,
+  Tstar: 0.85,
+  lastPreset: 'live capture',
+  lastNote: 'Captured from live editor.',
+};
+
+// ---- Themes ----
+// Each palette pairs two colours whose subtractive-multiply produces the
+// "overlap" colour. Pure CMY-aligned pairs (emerald, cobalt, iris) yield a
+// vivid third colour where M and M̂ agree. Aurora uses an artistic overlap
+// override (decoupled from the natural multiply) for a softer reading.
+function rgba(rgb, a) { return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`; }
+function rgbHex(rgb)  { return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`; }
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  if (h.length !== 6) return [0, 0, 0];
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+function rgbToHex(rgb) {
+  return '#' + rgb.map(v => Math.max(0, Math.min(255, v|0)).toString(16).padStart(2, '0')).join('');
+}
+
+// Lighten (t>0, toward white) or darken (t<0, toward black) an [r,g,b] array.
+function shadeRgb(rgb, t) {
+  if (t >= 0) return rgb.map(v => Math.round(v + (255 - v) * t));
+  const k = 1 + t;  // t<0 ⇒ k<1
+  return rgb.map(v => Math.round(v * k));
+}
+
+// Even-odd clip to "everywhere except inside this spline" — used to mask out
+// blob-boundary strokes inside the overlap region when highlight-coverage is on.
+function clipOutsideSpline(c, controlPoints, W, H) {
+  c.beginPath();
+  c.rect(0, 0, W, H);
+  tracePathSplineSub(c, controlPoints);
+  c.clip('evenodd');
+}
+
+// Smooth gradient — many rings with linearly-ramping alpha produces a
+// continuous topographic fade from CoM (high alpha) to boundary (low alpha),
+// while still tracing the blob's actual shape (unlike a circular radial
+// gradient). 30 stops at low per-ring alpha read as a smooth gradient when
+// stacked under the multiply blend group.
+const FID_NUM_STOPS = 30;
+function fidelityStops() {
+  // Stops from t=1.00 (outer/boundary) down to t=0.05 (innermost ring).
+  const stops = [];
+  for (let i = 0; i < FID_NUM_STOPS; i++) {
+    stops.push(1.00 - (0.95 * i) / (FID_NUM_STOPS - 1));
+  }
+  return stops;
+}
+function fidelityAlphas() {
+  // Linear ramp from outer-low to inner-high. Tuned so the centre saturation
+  // is roughly equivalent to the prior 6-stop version.
+  const out = [];
+  for (let i = 0; i < FID_NUM_STOPS; i++) {
+    const f = i / (FID_NUM_STOPS - 1);   // 0 (outer) ... 1 (inner)
+    out.push(0.025 + 0.075 * f);          // 0.025 ... 0.100
+  }
+  return out;
+}
+const FID_STOPS  = fidelityStops();
+const FID_ALPHAS = fidelityAlphas();
+
+const THEMES = {
+  emerald: {
+    label: 'Emerald (sky × saffron → green)',
+    M:  { fill: [ 56, 189, 248], stroke: '#0284c7', text: '#0369a1', fillAlpha: 0.55 },
+    Mh: { fill: [251, 191,  36], stroke: '#d97706', text: '#92400e', fillAlpha: 0.65 },
+    tauHalo: { fill: 'rgba(254, 215, 170, 0.55)', stroke: 'rgba(180, 83, 9, 0.7)' },
+    overlap: [ 31, 141,  32],   // sky × saffron → forest green
+    annTau:  '#92400e',
+  },
+  cobalt: {
+    label: 'Cobalt (cyan × fuchsia → blue)',
+    M:  { fill: [ 34, 211, 238], stroke: '#0891b2', text: '#0e7490', fillAlpha: 0.55 },
+    Mh: { fill: [217,  70, 239], stroke: '#a21caf', text: '#86198f', fillAlpha: 0.55 },
+    tauHalo: { fill: 'rgba(245, 208, 254, 0.55)', stroke: 'rgba(112, 26, 117, 0.7)' },
+    overlap: [ 30, 114, 222],   // cyan × fuchsia → cobalt
+    annTau:  '#86198f',
+  },
+  aurora: {
+    label: 'Aurora (mint × rose → sky)',
+    M:  { fill: [ 52, 211, 153], stroke: '#059669', text: '#065f46', fillAlpha: 0.55 },
+    Mh: { fill: [244, 114, 182], stroke: '#db2777', text: '#9d174d', fillAlpha: 0.55 },
+    tauHalo: { fill: 'rgba(251, 207, 232, 0.55)', stroke: 'rgba(157, 23, 77, 0.7)' },
+    overlap: [ 56, 189, 248],   // override: sky (decoupled from natural multiply)
+    annTau:  '#9d174d',
+  },
+  iris: {
+    label: 'Iris (pink × sky → indigo)',
+    M:  { fill: [244, 114, 182], stroke: '#db2777', text: '#9d174d', fillAlpha: 0.55 },
+    Mh: { fill: [ 56, 189, 248], stroke: '#0284c7', text: '#0369a1', fillAlpha: 0.55 },
+    tauHalo: { fill: 'rgba(186, 230, 253, 0.55)', stroke: 'rgba(2, 132, 199, 0.7)' },
+    overlap: [ 52,  53, 149],   // pink × sky → indigo (natural multiply)
+    annTau:  '#0369a1',
+  },
+};
+
+let currentTheme = 'emerald';
+function theme() { return THEMES[currentTheme]; }
+
+// Custom overlap colour override — when set, the visible overlap colour comes
+// from this value (decoupled from what the multiply of the input pair would
+// naturally produce). null means "follow the theme's natural overlap."
+let customOverlap = null;
+function effectiveOverlap() { return customOverlap || theme().overlap; }
+
+function setTheme(key) {
+  if (!THEMES[key]) return;
+  currentTheme = key;
+  customOverlap = null;            // theme switch resets any custom override
+  const t = THEMES[key];
+  applyPaletteVars(t.M.fill, t.Mh.fill, t.overlap, t.Mh.stroke, t.M.text, t.Mh.text);
+  // Sync color picker to the new theme's natural overlap
+  const picker = document.getElementById('overlap-color');
+  if (picker) picker.value = rgbToHex(t.overlap);
+  // Keep the dropdown in sync if setTheme was called programmatically
+  const sel = document.getElementById('theme-select');
+  if (sel && sel.value !== key) sel.value = key;
+  if (mainView) update();
+}
+
+// Push the active palette's colours into CSS variables and inline swatches.
+function applyPaletteVars(Mfill, Mhfill, overlap, MhStroke, Mtext, MhText) {
+  const root = document.documentElement;
+  root.style.setProperty('--model',           Mtext);
+  root.style.setProperty('--observer',        MhText);
+  root.style.setProperty('--model-soft',      rgba(Mfill,    0.16));
+  root.style.setProperty('--observer-soft',   rgba(Mhfill,   0.18));
+  root.style.setProperty('--model-swatch',    rgbHex(Mfill));
+  root.style.setProperty('--observer-swatch', rgbHex(Mhfill));
+  root.style.setProperty('--observer-stroke', MhStroke);
+  root.style.setProperty('--overlap-swatch',  rgbHex(overlap));
+  root.style.setProperty('--overlap-pulse',   rgba(overlap, 0.20));
+  const sm  = document.getElementById('sw-M');
+  const smh = document.getElementById('sw-Mh');
+  if (sm)  sm.style.background  = rgbHex(Mfill);
+  if (smh) smh.style.background = rgbHex(Mhfill);
+  // Overlap swatch IS the color input — setting its value updates its visible swatch
+  const picker = document.getElementById('overlap-color');
+  if (picker) picker.value = rgbToHex(overlap);
+}
+
+// Update only the overlap-related vars/swatch (called when the picker changes).
+function applyOverlapVars(rgb) {
+  const root = document.documentElement;
+  root.style.setProperty('--overlap-swatch', rgbHex(rgb));
+  root.style.setProperty('--overlap-pulse',  rgba(rgb, 0.20));
+  // (picker.value is already the user's selection — no need to write back)
+}
+
+let drag = null;
+let hover = null;
+let seedCounter = 100;
+
+// Blob visibility toggles (top-of-editor pills)
+let showM  = true;
+let showMh = true;
+
+// Effect-highlight toggles (next to visibility pills)
+let highlightCoverage = false;
+let highlightFidelity = false;
+
+// Animation loop — only ticks while coverage highlight is on (it's the
+// animated one). Fidelity is static once drawn.
+let animRaf = null;
+let animT0 = 0;
+function ensureAnim() {
+  if (animRaf || !highlightCoverage) return;
+  animT0 = performance.now();
+  const tick = () => {
+    if (highlightCoverage) {
+      update();
+      animRaf = requestAnimationFrame(tick);
+    } else {
+      animRaf = null;
+    }
+  };
+  animRaf = requestAnimationFrame(tick);
+}
+
+const canvas = document.getElementById('editor');
+function fitCanvas(c, cssH = CANVAS_H) {
+  const cssW = c.clientWidth || 800;
+  const dpr = window.devicePixelRatio || 1;
+  c.width = cssW * dpr;
+  c.height = cssH * dpr;
+  c.style.height = cssH + 'px';
+  const cx = c.getContext('2d');
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx: cx, W: cssW, H: cssH };
+}
+
+// ---- Metrics ----
+function computeMetrics(s) {
+  const v_M  = blobPoly(s.M);
+  const v_Mh = blobPoly(s.Mh);
+  // τ-inflated observer: inflate control points, then expand
+  const cp_Mh_tau = s.tau > 0 ? inflateControlPoints(s.Mh.controlPoints, s.tau) : s.Mh.controlPoints;
+  const v_Mh_tau  = s.tau > 0 ? expandSpline(cp_Mh_tau) : v_Mh;
+  const area_M     = polyArea(v_M);
+  const area_Mh    = polyArea(v_Mh);
+  const area_Mh_tau = polyArea(v_Mh_tau);
+  const overlap    = overlapArea(v_M, v_Mh_tau, OVERLAP_GRID);
+  const c = area_M > 0 ? Math.min(1, overlap / area_M) : 0;
+  const d = Math.hypot(s.M.comX - s.Mh.comX, s.M.comY - s.Mh.comY);
+  const r_M  = Math.sqrt(area_M / Math.PI);
+  const r_Mh = Math.sqrt(area_Mh / Math.PI);
+  const denom = r_M + r_Mh + s.tau;
+  const f = Math.max(0, Math.min(1, 1 - d / Math.max(denom, 1e-6)));
+  const T = c * f;
+  const Delta = Math.max(0, s.Tstar - T);
+  let regime;
+  if (Delta < 0.005)      regime = 'automated';
+  else if (Delta <= 0.25) regime = 'sampling';
+  else                    regime = 'prior verification';
+  return { area_M, area_Mh, area_Mh_tau, overlap, d, c, f, T, Delta, regime, r_M, r_Mh,
+           v_M, v_Mh, v_Mh_tau, cp_Mh_tau };
+}
+
+// ---- Drawing helpers ----
+function strokeFillSpline(c, controlPoints, fill, stroke, lw = 2, dash = []) {
+  tracePathSpline(c, controlPoints);
+  if (fill) { c.fillStyle = fill; c.fill(); }
+  if (stroke) {
+    c.strokeStyle = stroke;
+    c.lineWidth = lw;
+    if (dash.length) c.setLineDash(dash);
+    c.stroke();
+    if (dash.length) c.setLineDash([]);
+  }
+}
+
+function drawOverlapVisually(c, cp_clip, cp_fill, fill) {
+  // Clip to first spline; fill second spline within clip.
+  c.save();
+  tracePathSpline(c, cp_clip);
+  c.clip();
+  tracePathSpline(c, cp_fill);
+  c.fillStyle = fill;
+  c.fill();
+  c.restore();
+}
+
+function drawCom(c, x, y, color) {
+  c.beginPath(); c.arc(x, y, 6, 0, Math.PI * 2);
+  c.fillStyle = '#ffffff'; c.fill();
+  c.lineWidth = 2.5; c.strokeStyle = color; c.stroke();
+  c.beginPath(); c.arc(x, y, 2.5, 0, Math.PI * 2);
+  c.fillStyle = color; c.fill();
+}
+
+function drawControlPoints(c, points, color, activeIndex = -1) {
+  for (let i = 0; i < points.length; i++) {
+    const [x, y] = points[i];
+    const active = (i === activeIndex);
+    c.beginPath();
+    c.arc(x, y, active ? 6.5 : 4.5, 0, Math.PI * 2);
+    if (active) {
+      c.fillStyle = color; c.fill();
+      c.lineWidth = 2; c.strokeStyle = '#ffffff'; c.stroke();
+    } else {
+      c.fillStyle = '#ffffff'; c.fill();
+      c.lineWidth = 1.8; c.strokeStyle = color; c.stroke();
+    }
+  }
+}
+
+// ---- Annotation system ----
+function farthestVertex(verts, fromX, fromY) {
+  let bestI = 0, bestD = -Infinity;
+  for (let i = 0; i < verts.length; i++) {
+    const [x, y] = verts[i];
+    const d = Math.hypot(x - fromX, y - fromY);
+    if (d > bestD) { bestD = d; bestI = i; }
+  }
+  return verts[bestI];
+}
+
+function normalizeDir(dx, dy) {
+  const len = Math.hypot(dx, dy) || 1;
+  return [dx / len, dy / len];
+}
+
+function buildAnnotations(s, metrics, th) {
+  const v_M  = metrics.v_M;
+  const v_Mh = metrics.v_Mh;
+  const v_Mh_tau = metrics.v_Mh_tau;
+  const cM  = polyCentroid(v_M);
+  const cMh = polyCentroid(v_Mh);
+  const anns = [];
+
+  if (showM) {
+    // 1. Real behavioral boundary
+    const aM = farthestVertex(v_M, cMh[0], cMh[1]);
+    anns.push({
+      text: "Real behavioral boundary",
+      color: th.M.stroke,
+      anchor: aM,
+      dir: normalizeDir(aM[0] - cM[0], aM[1] - cM[1]),
+      distance: 50,
+      italic: false,
+      fontSize: 11,
+    });
+
+    // 2. Real average behavior
+    anns.push({
+      text: "Real average behavior",
+      color: th.M.stroke,
+      anchor: [s.M.comX, s.M.comY],
+      dir: normalizeDir(s.M.comX - cMh[0], s.M.comY - cMh[1]),
+      distance: 46,
+      italic: true,
+      fontSize: 10.5,
+    });
+  }
+
+  if (showMh) {
+    // 3. Predicted behavioral boundary
+    const aMh = farthestVertex(v_Mh, cM[0], cM[1]);
+    anns.push({
+      text: "Predicted behavioral boundary",
+      color: th.Mh.text,
+      anchor: aMh,
+      dir: normalizeDir(aMh[0] - cMh[0], aMh[1] - cMh[1]),
+      distance: 50,
+      italic: false,
+      fontSize: 11,
+    });
+
+    // 4. Predicted average behavior
+    anns.push({
+      text: "Predicted average behavior",
+      color: th.Mh.text,
+      anchor: [s.Mh.comX, s.Mh.comY],
+      dir: normalizeDir(s.Mh.comX - cM[0], s.Mh.comY - cM[1]),
+      distance: 46,
+      italic: true,
+      fontSize: 10.5,
+    });
+
+    // 5. τ halo
+    if (s.tau > 0) {
+      const cMhT = polyCentroid(v_Mh_tau);
+      const aMhT = farthestVertex(v_Mh_tau, cM[0], cM[1]);
+      anns.push({
+        text: "Predicted boundary + τ tolerance",
+        color: th.annTau,
+        anchor: aMhT,
+        dir: normalizeDir(aMhT[0] - cMhT[0], aMhT[1] - cMhT[1]),
+        distance: 60,
+        italic: false,
+        fontSize: 10.5,
+      });
+    }
+  }
+
+  return anns;
+}
+
+function boxOverlapsPolygon(ann, verts, pad) {
+  const cx = ann.pos[0], cy = ann.pos[1];
+  const halfW = ann.w / 2 + pad;
+  const halfH = ann.h / 2 + pad;
+  const left = cx - halfW, right = cx + halfW;
+  const top  = cy - halfH, bottom = cy + halfH;
+  const samples = [
+    [left, top], [right, top], [left, bottom], [right, bottom],
+    [cx, cy],
+    [cx, top], [cx, bottom], [left, cy], [right, cy],
+  ];
+  for (const [px, py] of samples) {
+    if (pointInPoly(px, py, verts)) return true;
+  }
+  for (const [vx, vy] of verts) {
+    if (vx >= left && vx <= right && vy >= top && vy <= bottom) return true;
+  }
+  return false;
+}
+
+function boxDiscOverlap(ann, cx, cy, radius, pad) {
+  const bcx = ann.pos[0], bcy = ann.pos[1];
+  const halfW = ann.w / 2 + pad;
+  const halfH = ann.h / 2 + pad;
+  const closestX = Math.max(bcx - halfW, Math.min(bcx + halfW, cx));
+  const closestY = Math.max(bcy - halfH, Math.min(bcy + halfH, cy));
+  const dx = cx - closestX, dy = cy - closestY;
+  return radius - Math.hypot(dx, dy);
+}
+
+function layoutAnnotations(anns, ctx, canvasW, canvasH, s, metrics) {
+  // Each label has an invisible padding halo: the halo itself must not
+  // intersect another label's halo, any blob boundary, or any CoM disc.
+  const PADDING  = 20;  // between label boxes
+  const MARGIN   = 12;  // canvas edge
+  const BLOB_PAD = 18;  // from blob boundary (label edge → blob edge gap)
+  const COM_PAD  = 14;  // from CoM dot
+  const COM_RADIUS = 11;
+  const MAX_ITERS = 240;
+
+  for (const a of anns) {
+    ctx.font = (a.italic ? 'italic ' : '') + '600 ' + a.fontSize + 'px -apple-system, system-ui, sans-serif';
+    const tw = ctx.measureText(a.text).width;
+    a.w = tw + 12;
+    a.h = a.fontSize + 8;
+    a.pos = [
+      a.anchor[0] + a.dir[0] * a.distance,
+      a.anchor[1] + a.dir[1] * a.distance,
+    ];
+  }
+
+  for (const a of anns) {
+    a.pos[0] = Math.max(a.w / 2 + MARGIN, Math.min(canvasW - a.w / 2 - MARGIN, a.pos[0]));
+    a.pos[1] = Math.max(a.h / 2 + MARGIN, Math.min(canvasH - a.h / 2 - MARGIN, a.pos[1]));
+  }
+
+  const blobs = [];
+  if (showM) {
+    blobs.push({ verts: metrics.v_M, centroid: polyCentroid(metrics.v_M) });
+  }
+  if (showMh) {
+    blobs.push({ verts: metrics.v_Mh, centroid: polyCentroid(metrics.v_Mh) });
+    // Treat the τ-inflated observer halo (dashed boundary) as a hard boundary too,
+    // so labels respect it the same way they respect v_M and v_Mh.
+    if (s.tau > 0 && metrics.v_Mh_tau && metrics.v_Mh_tau !== metrics.v_Mh) {
+      blobs.push({ verts: metrics.v_Mh_tau, centroid: polyCentroid(metrics.v_Mh_tau) });
+    }
+  }
+  const coms = [];
+  if (showM)  coms.push([s.M.comX,  s.M.comY]);
+  if (showMh) coms.push([s.Mh.comX, s.Mh.comY]);
+
+  for (let iter = 0; iter < MAX_ITERS; iter++) {
+    let conflict = false;
+
+    // (a) label ↔ label
+    for (let i = 0; i < anns.length; i++) {
+      for (let j = i + 1; j < anns.length; j++) {
+        const A = anns[i], B = anns[j];
+        const dx = B.pos[0] - A.pos[0];
+        const dy = B.pos[1] - A.pos[1];
+        const minDx = (A.w + B.w) / 2 + PADDING;
+        const minDy = (A.h + B.h) / 2 + PADDING;
+        const ox = minDx - Math.abs(dx);
+        const oy = minDy - Math.abs(dy);
+        if (ox > 0 && oy > 0) {
+          conflict = true;
+          if (ox < oy) {
+            const push = ox / 2 + 0.4;
+            const sign = dx >= 0 ? 1 : -1;
+            A.pos[0] -= push * sign; B.pos[0] += push * sign;
+          } else {
+            const push = oy / 2 + 0.4;
+            const sign = dy >= 0 ? 1 : -1;
+            A.pos[1] -= push * sign; B.pos[1] += push * sign;
+          }
+        }
+      }
+    }
+
+    // (b) label ↔ blob interior (with BLOB_PAD breathing room)
+    for (const a of anns) {
+      for (const blob of blobs) {
+        if (boxOverlapsPolygon(a, blob.verts, BLOB_PAD)) {
+          conflict = true;
+          let dx = a.pos[0] - blob.centroid[0];
+          let dy = a.pos[1] - blob.centroid[1];
+          const len = Math.hypot(dx, dy);
+          if (len < 0.5) { dx = a.dir[0]; dy = a.dir[1]; }
+          else { dx /= len; dy /= len; }
+          a.pos[0] += dx * 9;
+          a.pos[1] += dy * 9;
+        }
+      }
+    }
+
+    // (c) label ↔ CoM dots
+    for (const a of anns) {
+      for (const [cx, cy] of coms) {
+        const depth = boxDiscOverlap(a, cx, cy, COM_RADIUS, COM_PAD);
+        if (depth > 0) {
+          if (Math.abs(a.anchor[0] - cx) < 0.5 && Math.abs(a.anchor[1] - cy) < 0.5) continue;
+          conflict = true;
+          let dx = a.pos[0] - cx, dy = a.pos[1] - cy;
+          const len = Math.hypot(dx, dy) || 1;
+          a.pos[0] += (dx / len) * (depth + 0.5);
+          a.pos[1] += (dy / len) * (depth + 0.5);
+        }
+      }
+    }
+
+    // (d) clamp to canvas
+    for (const a of anns) {
+      a.pos[0] = Math.max(a.w / 2 + MARGIN, Math.min(canvasW - a.w / 2 - MARGIN, a.pos[0]));
+      a.pos[1] = Math.max(a.h / 2 + MARGIN, Math.min(canvasH - a.h / 2 - MARGIN, a.pos[1]));
+    }
+
+    if (!conflict) break;
+  }
+}
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+
+function drawAnnotationLabel(c, a) {
+  const cx = a.pos[0], cy = a.pos[1];
+  const left = cx - a.w / 2, top = cy - a.h / 2;
+  const ax = a.anchor[0], ay = a.anchor[1];
+  const closestX = Math.max(left, Math.min(left + a.w, ax));
+  const closestY = Math.max(top,  Math.min(top  + a.h, ay));
+
+  c.strokeStyle = a.color;
+  c.lineWidth = 1.8;
+  c.setLineDash([4, 3]);
+  c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(ax, ay);
+  c.lineTo(closestX, closestY);
+  c.stroke();
+  c.setLineDash([]);
+  c.lineCap = 'butt';
+
+  c.fillStyle = a.color;
+  c.beginPath();
+  c.arc(ax, ay, 3, 0, Math.PI * 2);
+  c.fill();
+
+  c.fillStyle = 'rgba(255, 255, 255, 0.96)';
+  c.strokeStyle = a.color;
+  c.lineWidth = 1;
+  roundRect(c, left, top, a.w, a.h, 4);
+  c.fill();
+  c.stroke();
+
+  c.font = (a.italic ? 'italic ' : '') + '600 ' + a.fontSize + 'px -apple-system, system-ui, sans-serif';
+  c.fillStyle = a.color;
+  c.textBaseline = 'middle';
+  c.textAlign = 'center';
+  c.fillText(a.text, cx, cy + 0.5);
+}
+
+// ---- Highlight effects ----
+// FIDELITY: 6 stacked concentric Catmull-Rom *fills* per visible blob, in
+// multiply blend mode. Each band is the blob's control points scaled toward
+// the blob's CoM (its "average behavior" dot — pink for real, amber for
+// predicted). Alpha ramps from low at the outer band to high at the innermost,
+// AND each inner pixel accumulates *all* rings at or above its radius — so an
+// edge pixel gets 1 layer, a centre pixel gets all 6.
+//
+// Because the whole stack runs inside the multiply blend group, when both M
+// and M̂ are stacked, the two density fields multiply per-pixel. The overlap
+// at the outer-outer fringe is barely tinted; the overlap at the inner-inner
+// peaks compounds ~12 layers of multiply and turns deep saturated red. That's
+// the visual: where the fidelity ALSO overlaps strongly, we hammer the colour.
+//
+// Boundary used is the blob's own (NOT the τ-inflated edge), per spec. A faint
+// outer halo at t=1.12 gives the "light past the edge" cue.
+function drawFidelityStack(c, blob, rgb) {
+  const cx = blob.comX, cy = blob.comY;
+  const cps = blob.controlPoints;
+
+  // Fidelity gradient stops AT each blob's own boundary (t=1.0). Outside the
+  // boundary is left untouched — the background reads as clean white, with
+  // no halo bleeding past the real boundary or past M̂_τ.
+
+  // Smooth gradient — stacked fills from outer (t=1.0) to inner (t≈0.05).
+  // The many low-alpha rings build up a continuous topographic gradient that
+  // follows the blob's actual outline rather than approximating it as a circle.
+  for (let i = 0; i < FID_STOPS.length; i++) {
+    const t = FID_STOPS[i];
+    const ring = cps.map(([x, y]) => [cx + (x - cx) * t, cy + (y - cy) * t]);
+    tracePathSpline(c, ring);
+    c.fillStyle = rgba(rgb, FID_ALPHAS[i]);
+    c.fill();
+  }
+}
+
+// COVERAGE: two-part highlight on M ∩ M̂_τ (the overlap area used to compute c).
+//
+//   (a) AREA GLOW — a gentle inner glow that hugs the overlap's perimeter
+//       from inside and falls off toward the interior. Built by clipping to
+//       the overlap (intersection of M and M̂_τ), then stroking the two paths
+//       that contribute to the overlap's perimeter (M and M̂_τ) with stacked
+//       wide-line + shadowBlur layers. The clip retains only the inward
+//       halves of those strokes/shadows, so the glow concentrates near the
+//       edge of the overlap and fades inward. Three layers (broad-faint,
+//       medium, tight-stronger) give a smooth falloff.
+//
+//   (b) MARCHING ANTS — animated dashes along ∂(M ∩ M̂_τ), drawn AFTER the
+//       glow so the perimeter reads crisply on top. Scrolls via lineDashOffset.
+//
+// Colour comes from the active theme's overlap (the multiply result) — the
+// glow and ants read as "the colour of agreement."
+function drawCoverageGlow(c, s, m, tNow, overlapRgb) {
+  const antPhase = tNow * 0.022;
+  const breath   = 0.5 + 0.5 * Math.sin(tNow * 0.0028);
+  const pulse    = 0.78 + 0.22 * breath;   // gentle alpha modulation
+
+  // ---- (a) AREA GLOW — inner halo hugging the overlap perimeter ----
+  c.save();
+  // Clip to overlap = M ∩ M̂_τ. Two successive clips intersect.
+  tracePathSpline(c, s.M.controlPoints);
+  c.clip();
+  tracePathSpline(c, m.cp_Mh_tau);
+  c.clip();
+
+  // Stacked glow layers, broadest+faintest first → tightest+strongest last.
+  // lineWidth controls how thick the inner band is; shadowBlur controls the
+  // softness of the falloff toward the overlap interior.
+  const glowLayers = [
+    { lw: 22, blur: 22, alpha: 0.06 },   // broadest, faintest
+    { lw: 12, blur: 14, alpha: 0.11 },
+    { lw:  5, blur:  6, alpha: 0.18 },   // tightest at the perimeter
+  ];
+  c.lineCap  = 'round';
+  c.lineJoin = 'round';
+  for (const { lw, blur, alpha } of glowLayers) {
+    const a = alpha * pulse;
+    c.shadowColor = rgba(overlapRgb, a);
+    c.shadowBlur  = blur;
+    c.strokeStyle = rgba(overlapRgb, a);
+    c.lineWidth   = lw;
+    // M-arc-inside-M̂_τ and M̂_τ-arc-inside-M together form ∂(overlap).
+    tracePathSpline(c, s.M.controlPoints);
+    c.stroke();
+    tracePathSpline(c, m.cp_Mh_tau);
+    c.stroke();
+  }
+  c.shadowBlur = 0;
+  c.restore();
+
+  // ---- (b) MARCHING DOTS along the COMPLETE shared boundary ----
+  // ∂(M ∩ M̂_τ) is two arcs joined: the M-arc-inside-M̂_τ and the
+  // M̂_τ-arc-inside-M. We stroke both, so the dots traverse the WHOLE
+  // shared perimeter — not just one side.
+  //
+  // Two passes, half-cycle offset:  DARK dots and LIGHT dots interleave for
+  // a barber-pole feel. Both passes get a soft shadowBlur for the glow.
+  const dashCycle = 10.5;                            // 0.5 + 10 = dash + gap
+  const darkRgb   = shadeRgb(overlapRgb, -0.35);     // 35% toward black
+  const lightRgb  = shadeRgb(overlapRgb,  0.55);     // 55% toward white
+
+  function strokeBothArcs() {
+    // M̂_τ arc inside M
+    c.save();
+    tracePathSpline(c, s.M.controlPoints);
+    c.clip();
+    tracePathSpline(c, m.cp_Mh_tau);
+    c.stroke();
+    c.restore();
+    // M arc inside M̂_τ
+    c.save();
+    tracePathSpline(c, m.cp_Mh_tau);
+    c.clip();
+    tracePathSpline(c, s.M.controlPoints);
+    c.stroke();
+    c.restore();
+  }
+
+  c.save();
+  c.lineWidth = 4.5;                  // wider than M's 2.4 → punches through
+  c.setLineDash([0.5, 10]);           // tiny seg + round caps = circle dots
+  c.lineCap  = 'round';
+  c.lineJoin = 'round';
+  c.shadowBlur = 7;                   // soft glow halo per dot
+
+  // Pass 1 — DARK dots
+  c.lineDashOffset = -antPhase;
+  c.shadowColor = rgba(darkRgb,  0.55 + 0.10 * breath);
+  c.strokeStyle = rgba(darkRgb,  0.95);
+  strokeBothArcs();
+
+  // Pass 2 — LIGHT dots, offset by half a dash cycle so they fall between darks
+  c.lineDashOffset = -antPhase + dashCycle / 2;
+  c.shadowColor = rgba(lightRgb, 0.55 + 0.10 * breath);
+  c.strokeStyle = rgba(lightRgb, 0.92);
+  strokeBothArcs();
+
+  c.restore();
+}
+
+// ---- Render ----
+function render(s, view, isLive = true, showAnnotations = true, metricsIn = null) {
+  const c = view.ctx;
+  const W = view.W, H = view.H;
+  c.clearRect(0, 0, W, H);
+
+  const m = metricsIn || computeMetrics(s);
+  const cp_Mh_tau = m.cp_Mh_tau;
+  const th = theme();   // active palette
+
+  // === FILL PASS — source-over (no multiply darkening) ===
+  // Source-over means each fill ADDS colour over white without compounding
+  // darkness. Stacked fidelity rings produce a SATURATION gradient (edges
+  // near-white from low-alpha rings; centre saturated from many rings); the
+  // 'hue' overlap tint below then shifts the overlap's hue without touching
+  // lightness, so the overlap reads as more HUE at the centre rather than
+  // darker. (The literal multiply was making the overlap drift toward black
+  // at high density, which isn't what we want here.)
+
+  // 1. τ-inflated observer halo — drawn as a TRUE ANNULAR RING (M̂_τ minus M̂)
+  // via even-odd fill, so it only paints in the actual tolerance buffer zone
+  // between M̂ and M̂_τ. Without this, the halo would fill all of M̂_τ —
+  // including the part overlapping M — and tint the overlap's outer edges
+  // yellow, which then drifts toward green under the 'hue' overlay even where
+  // the fidelity stacks are essentially zero. Now the overlap interior is
+  // clean white at its outer fringe, just like a single blob's edge.
+  if (s.tau > 0 && showMh) {
+    c.beginPath();
+    tracePathSplineSub(c, cp_Mh_tau);
+    tracePathSplineSub(c, s.Mh.controlPoints);
+    c.fillStyle = th.tauHalo.fill;
+    c.fill('evenodd');
+  }
+
+  // 2 + 3. Body fills — solid by default, stacked concentric rings when the
+  // fidelity highlight is on. With fidelity off, alpha is forced to 1.0 so the
+  // blobs read as solid colour rather than the translucent fills that the
+  // fidelity stack interpolates toward at its edges.
+  if (highlightFidelity) {
+    if (showM)  drawFidelityStack(c, s.M,  th.M.fill);
+    if (showMh) drawFidelityStack(c, s.Mh, th.Mh.fill);
+  } else {
+    if (showM) {
+      tracePathSpline(c, s.M.controlPoints);
+      c.fillStyle = rgba(th.M.fill, 1);
+      c.fill();
+    }
+    if (showMh) {
+      tracePathSpline(c, s.Mh.controlPoints);
+      c.fillStyle = rgba(th.Mh.fill, 1);
+      c.fill();
+    }
+  }
+
+  // === OVERLAP — solid by default, radial halo when fidelity highlight is on.
+  // With fidelity OFF: paint the M ∩ M̂_τ region with the solid overlap colour
+  //   (preset by theme, e.g. forest green for sky × saffron). No gradient, no
+  //   white edges — the overlap reads as a flat patch that exactly matches the
+  //   solid body fills above it.
+  // With fidelity ON: keep the original radial halo (saturated centre → white
+  //   edges, peak alpha scaled by CoM proximity) so the fidelity stack's
+  //   saturation gradient can blend smoothly into the overlap region.
+  if (showM && showMh && m.overlap > 0) {
+    c.save();
+    tracePathSpline(c, s.M.controlPoints);
+    c.clip();
+    tracePathSpline(c, cp_Mh_tau);
+    c.clip();
+
+    if (highlightFidelity) {
+      const midX  = (s.M.comX + s.Mh.comX) / 2;
+      const midY  = (s.M.comY + s.Mh.comY) / 2;
+      const scale = m.r_M + m.r_Mh;
+      const prox  = Math.max(0, 1 - m.d / Math.max(scale, 1));
+      // Approximate radius of an equivalent disc with the overlap's area,
+      // bumped slightly so the gradient reaches comfortably past the perimeter.
+      const overlapR = Math.max(Math.sqrt(m.overlap / Math.PI), 30);
+      const gradR    = overlapR * 1.35;
+
+      // Peak alpha at centre scales with CoM proximity. Baseline ensures any
+      // overlap shows *some* of the chosen colour; full alignment reaches near-
+      // preset strength.
+      const peakA = 0.30 + 0.60 * prox;
+
+      const grad = c.createRadialGradient(midX, midY, 0, midX, midY, gradR);
+      grad.addColorStop(0,    rgba(effectiveOverlap(), peakA));
+      grad.addColorStop(0.40, rgba(effectiveOverlap(), peakA * 0.45));
+      grad.addColorStop(0.70, 'rgba(255, 255, 255, 0.35)');
+      grad.addColorStop(1.00, 'rgba(255, 255, 255, 0.88)');
+      c.fillStyle = grad;
+      c.fillRect(0, 0, W, H);
+    } else {
+      // Solid flat fill of the overlap region in the theme's overlap colour.
+      c.fillStyle = rgba(effectiveOverlap(), 1);
+      c.fillRect(0, 0, W, H);
+    }
+
+    c.restore();
+  }
+
+  // === STROKE PASS — crisp source-over boundaries on top of fills ===
+  // When highlight-coverage is on, mask out each boundary's portion that lies
+  // inside the OTHER blob — that's exactly where the marching dots will
+  // travel, so the dots become the only thing visible along ∂(M ∩ M̂_τ).
+  const hideUnderAnts = highlightCoverage && isLive && showM && showMh;
+
+  if (s.tau > 0 && showMh) {
+    c.save();
+    if (hideUnderAnts) clipOutsideSpline(c, s.M.controlPoints, W, H);
+    tracePathSpline(c, cp_Mh_tau);
+    c.strokeStyle = th.tauHalo.stroke;
+    c.lineWidth = 1.4;
+    c.setLineDash([6, 4]);
+    c.stroke();
+    c.setLineDash([]);
+    c.restore();
+  }
+  if (showM) {
+    c.save();
+    if (hideUnderAnts) clipOutsideSpline(c, m.cp_Mh_tau, W, H);
+    tracePathSpline(c, s.M.controlPoints);
+    c.strokeStyle = th.M.stroke;
+    c.lineWidth = 2.4;
+    c.stroke();
+    c.restore();
+  }
+  if (showMh) {
+    c.save();
+    // Hide M̂'s inner solid stroke inside M too — covers the τ=0 case where
+    // M̂_τ = M̂ and the ants travel along M̂'s actual boundary.
+    if (hideUnderAnts) clipOutsideSpline(c, s.M.controlPoints, W, H);
+    tracePathSpline(c, s.Mh.controlPoints);
+    c.strokeStyle = th.Mh.stroke;
+    c.lineWidth = 2.4;
+    c.stroke();
+    c.restore();
+  }
+
+  // === COVERAGE HIGHLIGHT — marching ants around ∂(M ∩ M̂_τ) ===
+  if (highlightCoverage && isLive && showM && showMh) {
+    drawCoverageGlow(c, s, m, performance.now(), effectiveOverlap());
+  }
+
+  // 5. Control point handles (only on live editor)
+  if (isLive) {
+    const activeM  = (hover && hover.blob === 'M'  && hover.kind === 'vertex') ? hover.index : -1;
+    const activeMh = (hover && hover.blob === 'Mh' && hover.kind === 'vertex') ? hover.index : -1;
+    if (showM)  drawControlPoints(c, s.M.controlPoints,  th.M.stroke,  activeM);
+    if (showMh) drawControlPoints(c, s.Mh.controlPoints, th.Mh.stroke, activeMh);
+  }
+
+  // 6. Centers of mass
+  if (showM)  drawCom(c, s.M.comX,  s.M.comY,  th.M.stroke);
+  if (showMh) drawCom(c, s.Mh.comX, s.Mh.comY, th.Mh.stroke);
+
+  // 7. Annotations
+  if (showAnnotations) {
+    const anns = buildAnnotations(s, m, th);
+    layoutAnnotations(anns, c, W, H, s, m);
+    for (const a of anns) drawAnnotationLabel(c, a);
+  }
+}
+
+// ---- Hit testing ----
+function isVisible(key) { return key === 'M' ? showM : showMh; }
+
+function findHover(x, y) {
+  const keys = ['M', 'Mh'].filter(isVisible);
+  for (const key of keys) {
+    const b = state[key];
+    const d = Math.hypot(b.comX - x, b.comY - y);
+    if (d < HIT_COM_PX) return { blob: key, kind: 'com' };
+  }
+  // Control point handles
+  for (const key of keys) {
+    const b = state[key];
+    let best = -1, bestD = Infinity;
+    for (let i = 0; i < b.controlPoints.length; i++) {
+      const dd = Math.hypot(b.controlPoints[i][0] - x, b.controlPoints[i][1] - y);
+      if (dd < HIT_VERTEX_PX && dd < bestD) { bestD = dd; best = i; }
+    }
+    if (best !== -1) return { blob: key, kind: 'vertex', index: best };
+  }
+  // Body — uses the rendered spline polygon
+  for (const key of keys) {
+    if (pointInPoly(x, y, blobPoly(state[key]))) return { blob: key, kind: 'body' };
+  }
+  return null;
+}
+
+function clientToCanvas(e) {
+  const rect = canvas.getBoundingClientRect();
+  let cx, cy;
+  if (e.touches && e.touches.length) {
+    cx = e.touches[0].clientX; cy = e.touches[0].clientY;
+  } else {
+    cx = e.clientX; cy = e.clientY;
+  }
+  return [cx - rect.left, cy - rect.top];
+}
+
+function onPointerDown(e) {
+  e.preventDefault();
+  const [x, y] = clientToCanvas(e);
+  const h = findHover(x, y);
+  if (!h) { drag = null; return; }
+  const b = state[h.blob];
+  if (h.kind === 'com') {
+    drag = { kind: 'com', blob: h.blob };
+  } else if (h.kind === 'vertex') {
+    drag = {
+      kind: 'vertex',
+      blob: h.blob,
+      index: h.index,
+      startMouse: [x, y],
+      startPoint: [b.controlPoints[h.index][0], b.controlPoints[h.index][1]],
+    };
+  } else if (h.kind === 'body') {
+    drag = {
+      kind: 'body',
+      blob: h.blob,
+      offsets: b.controlPoints.map(([vx, vy]) => [vx - x, vy - y]),
+      comOff: [b.comX - x, b.comY - y],
+    };
+  }
+}
+
+function onPointerMove(e) {
+  const [x, y] = clientToCanvas(e);
+  if (!drag) {
+    const h = findHover(x, y);
+    hover = h;
+    canvas.style.cursor =
+      !h ? 'default' :
+      h.kind === 'com' ? 'grab' :
+      h.kind === 'vertex' ? 'crosshair' :
+      'move';
+    update();
+    return;
+  }
+  const b = state[drag.blob];
+  if (drag.kind === 'com') {
+    const poly = blobPoly(b);
+    if (pointInPoly(x, y, poly)) {
+      b.comX = x; b.comY = y;
+    } else {
+      // Pull back to a safe interior point
+      const [cx, cy] = polyCentroid(poly);
+      let bestI = 0, bestD = Infinity;
+      for (let i = 0; i < poly.length; i++) {
+        const dd = Math.hypot(poly[i][0] - x, poly[i][1] - y);
+        if (dd < bestD) { bestD = dd; bestI = i; }
+      }
+      b.comX = poly[bestI][0] * 0.30 + cx * 0.70;
+      b.comY = poly[bestI][1] * 0.30 + cy * 0.70;
+    }
+  } else if (drag.kind === 'vertex') {
+    // Single control point follows mouse exactly — spline smooths the deformation
+    const dx = x - drag.startMouse[0];
+    const dy = y - drag.startMouse[1];
+    b.controlPoints[drag.index] = [
+      drag.startPoint[0] + dx,
+      drag.startPoint[1] + dy,
+    ];
+    // If CoM falls outside the new spline shape, snap it to the centroid.
+    const poly = blobPoly(b);
+    if (!pointInPoly(b.comX, b.comY, poly)) {
+      const [cx, cy] = polyCentroid(poly);
+      b.comX = cx; b.comY = cy;
+    }
+  } else if (drag.kind === 'body') {
+    b.controlPoints = drag.offsets.map(([ox, oy]) => [x + ox, y + oy]);
+    b.comX = x + drag.comOff[0];
+    b.comY = y + drag.comOff[1];
+  }
+  update();
+}
+
+function onPointerUp() { drag = null; }
+
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('mousemove', onPointerMove);
+window.addEventListener('mouseup', onPointerUp);
+canvas.addEventListener('mouseleave', () => { if (!drag) { hover = null; canvas.style.cursor = 'default'; update(); } });
+canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); }, { passive: false });
+canvas.addEventListener('touchend', onPointerUp);
+
+// ---- Sliders ----
+document.getElementById('tau').addEventListener('input', (e) => {
+  state.tau = parseFloat(e.target.value);
+  update();
+});
+document.getElementById('Tstar').addEventListener('input', (e) => {
+  state.Tstar = parseFloat(e.target.value);
+  update();
+});
+
+// ---- Blob visibility toggles ----
+function wireToggle(id, getter, setter) {
+  document.getElementById(id).addEventListener('click', (e) => {
+    setter(!getter());
+    e.currentTarget.setAttribute('data-on', String(getter()));
+    update();
+  });
+}
+wireToggle('toggle-M',  () => showM,  v => { showM  = v; });
+wireToggle('toggle-Mh', () => showMh, v => { showMh = v; });
+
+// Effect-highlight toggles — drive an animation loop while coverage is on.
+document.getElementById('toggle-Cov').addEventListener('click', (e) => {
+  highlightCoverage = !highlightCoverage;
+  e.currentTarget.setAttribute('data-on', String(highlightCoverage));
+  if (highlightCoverage) ensureAnim();
+  update();
+});
+document.getElementById('toggle-Fid').addEventListener('click', (e) => {
+  highlightFidelity = !highlightFidelity;
+  e.currentTarget.setAttribute('data-on', String(highlightFidelity));
+  update();
+});
+
+// Theme palette dropdown
+document.getElementById('theme-select').addEventListener('change', (e) => {
+  setTheme(e.target.value);
+});
+
+// Overlap colour picker — overrides the theme's natural multiply result so
+// users can do "fake color theory" (any input pair → any chosen output hue).
+document.getElementById('overlap-color').addEventListener('input', (e) => {
+  customOverlap = hexToRgb(e.target.value);
+  applyOverlapVars(customOverlap);
+  update();
+});
+
+// Reset overlap to theme's natural value (clears the custom override).
+document.getElementById('overlap-reset').addEventListener('click', () => {
+  customOverlap = null;
+  const t = theme();
+  const picker = document.getElementById('overlap-color');
+  if (picker) picker.value = rgbToHex(t.overlap);
+  applyOverlapVars(t.overlap);
+  update();
+});
+
+// ---- Quick actions ----
+document.getElementById('align').addEventListener('click', () => {
+  state.Mh = cloneBlob(state.M);
+  state.lastPreset = 'aligned';
+  state.lastNote = '<span class="mhat">M</span> aligned to M — perfect agreement. c = f = T = 1.';
+  document.getElementById('preset-note').innerHTML = state.lastNote;
+  update();
+});
+
+document.getElementById('reseed').addEventListener('click', () => {
+  seedCounter += 2;
+  const m = state.M, mh = state.Mh;
+  const polyM  = blobPoly(m), polyMh = blobPoly(mh);
+  const [cxM, cyM]  = polyCentroid(polyM);
+  const [cxMh, cyMh] = polyCentroid(polyMh);
+  const rM  = Math.sqrt(polyArea(polyM)  / Math.PI);
+  const rMh = Math.sqrt(polyArea(polyMh) / Math.PI);
+  state.M  = makeBlob(cxM,  cyM,  rM,  seedCounter);
+  state.Mh = makeBlob(cxMh, cyMh, rMh, seedCounter + 1);
+  state.M.comX  = m.comX;  state.M.comY  = m.comY;
+  state.Mh.comX = mh.comX; state.Mh.comY = mh.comY;
+  const polyMnew  = blobPoly(state.M);
+  const polyMhnew = blobPoly(state.Mh);
+  if (!pointInPoly(state.M.comX, state.M.comY, polyMnew)) {
+    const [cx, cy] = polyCentroid(polyMnew);
+    state.M.comX = cx; state.M.comY = cy;
+  }
+  if (!pointInPoly(state.Mh.comX, state.Mh.comY, polyMhnew)) {
+    const [cx, cy] = polyCentroid(polyMhnew);
+    state.Mh.comX = cx; state.Mh.comY = cy;
+  }
+  update();
+});
+
+// ---- Presets ----
+const PRESETS = {
+  'reset':         { M: [330, 240, 130,  7], Mh: [570, 240, 120, 13], tau: 14, Tstar: 0.85,
+                     tag: 'live capture', note: 'Default starting configuration.' },
+  'wide-jack':     { M: [450, 240, 145, 11], Mh: [456, 242, 142, 17], tau: 10, Tstar: 0.95,
+                     tag: 'Wide & Jack 1880s',
+                     note: 'Nearly coincident blobs after 9 years of observation. T ≈ 1.' },
+  'knight-pre':    { M: [430, 240, 125, 21], Mh: [440, 242, 122, 27], tau: 10, Tstar: 0.95,
+                     tag: 'Knight pre-deploy (Jul 2012)',
+                     note: '<span class="mhat">M</span> matched the deployed router. T just below T*.' },
+  'knight-post':   { M: [240, 240, 100, 31], Mh: [660, 240,  85, 37], tau: 10, Tstar: 0.95,
+                     tag: 'Knight Aug 1, 2012',
+                     note: 'Power Peg → M shifted to a region <span class="mhat">M</span> no longer touches. Catastrophic.' },
+  'credit-c1':     { M: [440, 240, 140, 41], Mh: [450, 240, 135, 43], tau: 10, Tstar: 0.70,
+                     tag: 'Credit pipeline c₁ bureau feed',
+                     note: 'Paper: c = 0.96, f = 0.97, T = 0.93. Strong overlap, low T*.' },
+  'credit-c12':    { M: [380, 240, 130, 51], Mh: [540, 250, 120, 53], tau: 22, Tstar: 0.95,
+                     tag: 'Credit pipeline c₁₂ macro overlay',
+                     note: 'Paper: c = 0.74, f = 0.88. Macro team <span class="mhat">M</span> stale on current rate cycle.' },
+  'credit-c4':     { M: [370, 240, 125, 61], Mh: [540, 235, 105, 63], tau: 18, Tstar: 0.85,
+                     tag: 'Credit pipeline c₄ alt-data',
+                     note: 'Paper: c = 0.71, f = 0.87. Distribution drift — alt-data left validated population.' },
+  'automation-bias': { M: [450, 240, 145, 71], Mh: [452, 240, 35, 73], tau: 8, Tstar: 0.95,
+                     tag: 'Automation bias (Robodebt / Toeslagenaffaire)',
+                     note: 'Observer blob has collapsed to deference. Centers aligned, coverage minimal.' },
+};
+
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = PRESETS[btn.dataset.preset];
+    if (!p) return;
+    state.M  = makeBlob(p.M[0], p.M[1], p.M[2], p.M[3]);
+    state.Mh = makeBlob(p.Mh[0], p.Mh[1], p.Mh[2], p.Mh[3]);
+    state.tau = p.tau;
+    state.Tstar = p.Tstar;
+    state.lastPreset = p.tag;
+    state.lastNote = p.note;
+    document.getElementById('tau').value = state.tau;
+    document.getElementById('Tstar').value = state.Tstar;
+    document.getElementById('preset-note').innerHTML = p.note;
+    update();
+  });
+});
+
+// ---- Snapshot rendering ----
+// ---- Update ----
+let mainView = null;
+function update() {
+  if (!mainView) mainView = fitCanvas(canvas, CANVAS_H);
+  const m = computeMetrics(state);
+  render(state, mainView, true, true, m);
+
+  function set(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+  set('m_areaM',    m.area_M.toFixed(0));
+  set('m_areaMh',   m.area_Mh.toFixed(0));
+  set('m_overlap',  m.overlap.toFixed(0));
+  set('m_d',        m.d.toFixed(0) + 'px');
+  set('m_c',        m.c.toFixed(3));
+  set('m_f',        m.f.toFixed(3));
+  set('m_T',        m.T.toFixed(3));
+  set('m_D',        m.Delta.toFixed(3));
+  set('tau_v',      state.tau);
+  set('Tstar_v',    state.Tstar.toFixed(2));
+
+  const rg = document.getElementById('regime');
+  rg.className = 'regime ' + (m.regime === 'automated' ? 'auto' : m.regime === 'sampling' ? 'samp' : 'prior');
+  if (m.regime === 'automated') {
+    rg.innerHTML = `<b>Automated processing admissible.</b> Δ ≈ 0 — no HITL gate required at the current T*.`;
+  } else if (m.regime === 'sampling') {
+    rg.innerHTML = `<b>Sampling regime.</b> Route a fraction proportional to Δ = ${m.Delta.toFixed(3)} to a human lens covering the deficit (L2D-style selective prediction).`;
+  } else {
+    rg.innerHTML = `<b>Prior verification required.</b> Δ = ${m.Delta.toFixed(3)}. Every case through a human lens — EU AI Act Art. 14(5) territory.`;
+  }
+}
+
+window.addEventListener('resize', () => {
+  mainView = fitCanvas(canvas, CANVAS_H);
+  update();
+});
+
+requestAnimationFrame(() => {
+  mainView = fitCanvas(canvas, CANVAS_H);
+  setTheme(currentTheme);   // applies CSS vars + paints initial swatches
+  update();
+});
+</script>
+
+</body>
+</html>

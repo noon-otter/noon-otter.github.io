@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Why We Have Eighty Epicycles in Model Risk Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f7f3ea;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --rule: #d9d3c4;
+    --rule-strong: #b9b1a0;
+
+    --accent: #a6172d;
+    --accent-soft: rgba(166, 23, 45, 0.18);
+
+    --c-sr117: #2c5f8d;     /* deep blue — original */
+    --c-naic:  #6b7d3a;     /* olive */
+    --c-eu:    #3b6e8a;     /* teal */
+    --c-osfi:  #8a5a3a;     /* umber */
+    --c-sr262: #a6172d;     /* accent red — featured */
+    --c-carve: #a6172d;     /* carveouts inherit accent */
+
+    --orbit:      #c8c1b1;
+    --orbit-soft: #ddd6c5;
+
+    --serif: "Playfair Display", "Times New Roman", Georgia, serif;
+    --sans:  "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+    --mono:  "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 20px 20px 36px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(22px, 2.6vw, 32px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .dek {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(14px, 1.3vw, 16px);
+    color: #3a3a3a;
+    max-width: 920px;
+    margin: 0 0 16px;
+    line-height: 1.4;
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 12px 14px 14px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    gap: 12px;
+  }
+  .panel-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1.1;
+  }
+  .panel-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .canvas-wrap {
+    position: relative;
+    width: min(100%, 60vh);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+    background: #fdfcf8;
+    border: 1px solid var(--rule);
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+  .canvas-caption {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    font-family: var(--sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    background: rgba(253, 252, 248, 0.85);
+    padding: 4px 8px;
+    max-width: 78%;
+  }
+
+  /* SR 26-2 standalone beat — reveal annotation */
+  .sr262-beat {
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    background: rgba(166, 23, 45, 0.92);
+    color: #fff;
+    padding: 8px 10px;
+    font-family: var(--sans);
+    font-size: 11px;
+    line-height: 1.35;
+    max-width: 220px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+    border-left: 3px solid #fff;
+  }
+  .sr262-beat.show { opacity: 1; transform: translateY(0); }
+  .sr262-beat .label {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 9px;
+    font-weight: 700;
+    opacity: 0.85;
+    margin-bottom: 3px;
+  }
+  .sr262-beat strong {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 12px 14px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #444;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    transition: opacity 0.2s ease;
+  }
+  .legend-item.dim { opacity: 0.28; }
+  .swatch {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+  }
+  .swatch.line {
+    width: 14px; height: 0; border-top: 2px dashed var(--orbit); border-radius: 0;
+  }
+  .swatch.carve {
+    background: transparent;
+    border: 1.5px dashed var(--accent);
+  }
+
+  /* The operator panel's legend is the definition itself, set as a sentence
+     rather than a row of color chips. The four annotated terms pick up the
+     accent color so the eye can match them to their location in the diagram. */
+  .legend.op-legend {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+  }
+  .op-defn {
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .op-defn em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .controls {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px 22px;
+    margin-bottom: 18px;
+  }
+  .control { display: flex; flex-direction: column; gap: 6px; }
+  .control-label {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .control-value {
+    font-family: var(--serif);
+    font-size: 16px;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--rule-strong);
+    outline: none;
+    margin: 6px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 0;
+  }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 9px 14px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  button.secondary {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  button:hover { opacity: 0.82; }
+
+  .stage-tracker {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-top: 0;
+    padding: 10px 16px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: -18px;
+    margin-bottom: 18px;
+    font-size: 11px;
+  }
+  .stage-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border: 1px solid var(--rule-strong);
+    background: #fdfcf8;
+    font-family: var(--sans);
+    color: var(--muted);
+    transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+    opacity: 0.55;
+  }
+  .stage-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--rule-strong);
+  }
+  .stage-pill.active {
+    background: #fff;
+    color: var(--ink);
+    border-color: var(--ink);
+    opacity: 1;
+  }
+  .stage-pill.active .dot { background: var(--ink); }
+  .stage-pill.featured.active {
+    background: #fdf2f3;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .stage-pill.featured.active .dot { background: var(--accent); }
+  .stage-pill .yr {
+    font-family: var(--mono);
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  .notes {
+    border-top: 2px solid var(--ink);
+    padding-top: 18px;
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2a2a2a;
+    column-count: 2;
+    column-gap: 36px;
+    column-rule: 1px solid var(--rule);
+  }
+  @media (max-width: 760px) { .notes { column-count: 1; } }
+  .notes p { margin: 0 0 12px; }
+  .notes strong {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    display: inline-block;
+    margin-right: 4px;
+  }
+  .notes em { color: var(--accent); font-style: italic; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: #f0ebde;
+    padding: 1px 5px;
+  }
+
+  .byline {
+    font-family: var(--sans);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="eyebrow">An Illustrated Explainer · Model Risk Management</div>
+  <h1>Why We Have Eighty Epicycles in <em>Model Risk Management</em> — and How to Make Them Stop</h1>
+  <p class="dek">For fifteen years, every new regulator has answered the same question with a different definition of "model." Stack them up and the chaos is the shape of the field. Redraw the diagram and the answer is small enough to put on one line.</p>
+
+  <div class="panels">
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">The Regulatory View</div>
+        <div class="panel-sub">2011 – 2026 · Five definitions, three carveouts</div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="govCanvas"></canvas>
+        <div class="canvas-caption">"Model = ?" at center · each regulation an epicycle</div>
+        <div class="sr262-beat" id="sr262Beat" aria-hidden="true">
+          <div class="label">SR 26-2 · Apr 17, 2026</div>
+          <strong>Published 16 days ago.</strong>
+          <div style="margin-top:4px;opacity:0.92;">Carves out GenAI and agentic AI by name. The newest epicycle is the freshest patch.</div>
+        </div>
+      </div>
+      <div class="legend" id="govLegend"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">The Operator View</div>
+        <div class="panel-sub">One definition · the invariant</div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="opCanvas"></canvas>
+        <div class="canvas-caption">A versioned, typed operator with a separable runtime</div>
+      </div>
+      <div class="legend op-legend">
+        <span class="op-defn">A model is a <em>versioned</em>, <em>typed</em> <em>operator</em> with a formally <em>separable runtime environment.</em></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <div class="control-label"><span>Playback</span></div>
+      <div class="btn-row">
+        <button id="playBtn">Pause</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+    </div>
+    <div class="control">
+      <div class="control-label"><span>Speed</span><span class="control-value" id="speedVal">1×</span></div>
+      <input type="range" id="speed" min="0" max="6" step="1" value="2" />
+    </div>
+    <div class="control" style="grid-column: span 2; min-width: 0;">
+      <div class="control-label">
+        <span>Epicycles active</span>
+        <span class="control-value" id="ordersVal">0 of 8 · empty center</span>
+      </div>
+      <input type="range" id="orders" min="0" max="8" step="1" value="0" />
+    </div>
+  </div>
+
+  <div class="stage-tracker" id="tracker"></div>
+
+  <div class="notes">
+    <p><strong>The puzzle.</strong> Every governance failure of the last fifteen years is the same failure: <em>we never defined the model.</em> Each new regulation answers the question by writing a slightly different definition next to the last one — patching what the previous text awkwardly included or excluded — until the field is run on twelve overlapping vocabularies that almost, but never quite, line up.</p>
+
+    <p><strong>The Ptolemy parallel.</strong> When ancient astronomers' simple deferent model failed to match observation, they did not redraw the diagram. They added a smaller circle on top. Then a smaller one on top of that. By Copernicus's day, more than eighty epicycles were stacked against the heavens. Each worked. Each was wrong. The system described was wrong; the patches were just clever enough to keep it running.</p>
+
+    <p><strong>The five definitions.</strong> Stack them and watch the chaos grow. <code>SR 11-7</code> (2011) anchors on <em>quantitative method</em> — Black-Scholes is in, generative output is out. The <code>NAIC Bulletin</code> (2023) anchors on <em>machine-based system influencing decisions</em>. The <code>EU AI Act</code> (2024) anchors on <em>inference</em>, then introduces a separate definition of "model" for general-purpose AI — same word, different referent. <code>OSFI E-23</code> (effective 2027) anchors on <em>processes inputs to results</em>, sweeping AI/ML in by name. Five regulators, five anchor verbs, all chasing the same elephant from different angles.</p>
+
+    <p><strong>The newest epicycle.</strong> <code>SR 26-2</code> landed sixteen days before this talk. It tightens SR 11-7's net — adding the word <em>complex</em> so simple spreadsheets escape — and then explicitly states that generative AI and agentic AI <em>"are novel and rapidly evolving"</em> and so <em>"are not within the scope of this guidance."</em> Three new carveouts ride on the regulation's body like the smaller circles Ptolemy stacked on his largest deferent. The fix patches the symptom and lets the practitioner keep operating, while the central question is left unanswered for the third time in a generation.</p>
+
+    <p><strong>The hidden geometry.</strong> Each definition <em>works</em> for its slice. That is why epicycles persist — they are not stupid, they are locally correct. The slider here adds them one at a time so the cost of the geometry becomes visible: by the time all eight are running, the orbits overlap, the labels collide, and the trace of "what counts as a model" is a smear. No single navigator could steer by it.</p>
+
+    <p><strong>The redrawn diagram.</strong> The right panel is the same scene with a different center. <em>A model is a versioned, typed operator with a formally separable runtime environment.</em> Versioned: anything that can change the output has a number. Typed: inputs and outputs have shape and meaning. Operator: a function from inputs to outputs — not a notebook, not an API, not a vibe. Separable runtime: the model is not the GPU it ran on. Once the operator is defined, every regulator's controls map onto its components. The policy engine scales with risk tier, not with the buzzword. One inventory. One lifecycle. One controls map. The math does not care what year it is.</p>
+  </div>
+
+  <div class="byline">Illustration · Cowork Studio · Sources: SR 11-7, SR 26-2, EU Reg. 2024/1689, NAIC AI Model Bulletin, OSFI Guideline E-23. With acknowledgement to Ptolemy of Alexandria.</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const govCanvas = document.getElementById("govCanvas");
+  const opCanvas = document.getElementById("opCanvas");
+  const ctxG = govCanvas.getContext("2d");
+  const ctxO = opCanvas.getContext("2d");
+
+  // ---- CSS variable bridge: keep JS colors in sync with stylesheet ----
+  const css = getComputedStyle(document.documentElement);
+  const C = {
+    ink: css.getPropertyValue("--ink").trim(),
+    muted: css.getPropertyValue("--muted").trim(),
+    rule: css.getPropertyValue("--rule").trim(),
+    ruleStrong: css.getPropertyValue("--rule-strong").trim(),
+    accent: css.getPropertyValue("--accent").trim(),
+    accentSoft: css.getPropertyValue("--accent-soft").trim(),
+    paper: css.getPropertyValue("--paper").trim(),
+    orbit: css.getPropertyValue("--orbit").trim(),
+    orbitSoft: css.getPropertyValue("--orbit-soft").trim(),
+    sr117: css.getPropertyValue("--c-sr117").trim(),
+    naic: css.getPropertyValue("--c-naic").trim(),
+    eu: css.getPropertyValue("--c-eu").trim(),
+    osfi: css.getPropertyValue("--c-osfi").trim(),
+    sr262: css.getPropertyValue("--c-sr262").trim(),
+    carve: css.getPropertyValue("--c-carve").trim(),
+  };
+
+  // ---- The five definitional epicycles + three carveouts ----
+  // radiusFrac is fraction of the canvas half-min minus margin.
+  // omega is angular speed in radians per second of "Earth time" (we still
+  // borrow the orrery clock from epicycles.html so motion feels related).
+  // phase staggers starting positions so labels don't pile up at t=0.
+  const REGS = [
+    {
+      id: "sr117",
+      name: "SR 11-7",
+      year: "2011",
+      anchor: "“quantitative method”",
+      meta: "Federal Reserve / OCC",
+      radiusFrac: 0.22,
+      omega: 0.55,
+      phase: 0.10,
+      color: C.sr117,
+    },
+    {
+      id: "naic",
+      name: "NAIC",
+      year: "Dec 2023",
+      anchor: "“machine-based system”",
+      meta: "NAIC AI Model Bulletin",
+      radiusFrac: 0.36,
+      omega: 0.34,
+      phase: 1.05,
+      color: C.naic,
+    },
+    {
+      id: "eu",
+      name: "EU AI Act",
+      year: "2024",
+      anchor: "“AI system that infers”",
+      meta: "Reg. 2024/1689",
+      radiusFrac: 0.50,
+      omega: 0.23,
+      phase: 2.40,
+      color: C.eu,
+    },
+    {
+      id: "osfi",
+      name: "OSFI E-23",
+      year: "Sep 2025",
+      anchor: "“processes inputs to results”",
+      meta: "Effective May 2027",
+      radiusFrac: 0.64,
+      omega: 0.165,
+      phase: 3.85,
+      color: C.osfi,
+    },
+    {
+      id: "sr262",
+      name: "SR 26-2",
+      year: "Apr 17, 2026",
+      anchor: "“complex … not GenAI, not agentic”",
+      meta: "Federal Reserve · Supersedes SR 11-7",
+      radiusFrac: 0.80,
+      omega: 0.115,
+      phase: 5.10,
+      color: C.sr262,
+      featured: true,
+    },
+  ];
+
+  // Carveouts ride on SR 26-2's body — three smaller circles literally
+  // stacked on the largest deferent, the way Ptolemy stacked his.
+  const CARVEOUTS = [
+    {
+      id: "spreadsheet",
+      name: "Spreadsheet",
+      label: "spreadsheets out",
+      parentRadiusFrac: 0.085,
+      omega: 1.6,
+      phase: 0.0,
+    },
+    {
+      id: "genai",
+      name: "GenAI",
+      label: "GenAI out",
+      parentRadiusFrac: 0.115,
+      omega: 1.15,
+      phase: 1.9,
+    },
+    {
+      id: "agentic",
+      name: "Agentic",
+      label: "agentic AI out",
+      parentRadiusFrac: 0.143,
+      omega: 0.78,
+      phase: 3.6,
+    },
+  ];
+
+  const TOTAL_EPICYCLES = REGS.length + CARVEOUTS.length; // 8
+
+  const state = {
+    playing: true,
+    speed: 1,
+    orders: 0,         // 0..8 — how many epicycles are visible
+    t: 0,
+  };
+
+  // ---- DPR-aware canvas sizing ----
+  function resize() {
+    [govCanvas, opCanvas].forEach((c) => {
+      const rect = c.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      c.width = Math.round(rect.width * dpr);
+      c.height = Math.round(rect.height * dpr);
+      const ctx = c.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+  }
+  resize();
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 120);
+  });
+
+  // ---- Drawing primitives (cribbed from epicycles.html for visual rhyme) ----
+  function ring(ctx, cx, cy, r, color, width, dashes) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    if (dashes) ctx.setLineDash(dashes); else ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function disc(ctx, cx, cy, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  function glow(ctx, cx, cy, inner, outer, color1, color2) {
+    const g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+    g.addColorStop(0, color1);
+    g.addColorStop(1, color2);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outer, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  function label(ctx, text, x, y, color, size, weight) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.font = `${weight || 600} ${size}px "Source Sans 3", Helvetica, Arial, sans-serif`;
+    ctx.textBaseline = "middle";
+    // Halo so labels stay legible over orbits.
+    ctx.strokeStyle = "rgba(253, 252, 248, 0.95)";
+    ctx.lineWidth = 3;
+    ctx.lineJoin = "round";
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+  function gridCross(ctx, cx, cy, reach) {
+    ctx.save();
+    ctx.strokeStyle = C.orbitSoft;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 5]);
+    ctx.beginPath();
+    ctx.moveTo(cx - reach, cy); ctx.lineTo(cx + reach, cy);
+    ctx.moveTo(cx, cy - reach); ctx.lineTo(cx, cy + reach);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---- Geometry helpers — shared by both canvases ----
+  function dimsFor(canvas) {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const margin = 44;
+    const halfMin = Math.min(w, h) / 2 - margin;
+    return { w, h, cx: w / 2, cy: h / 2, R: halfMin };
+  }
+
+  // ---- Left panel: the regulatory view ----
+  function drawGov() {
+    const p = dimsFor(govCanvas);
+    ctxG.fillStyle = "#fdfcf8";
+    ctxG.fillRect(0, 0, p.w, p.h);
+
+    gridCross(ctxG, p.cx, p.cy, p.R + 14);
+
+    const visibleRegCount = Math.min(state.orders, REGS.length);
+    const visibleCarveCount = Math.max(0, state.orders - REGS.length);
+
+    // Center label: "Model = ?" — fades from prominent to background as
+    // epicycles accumulate, mirroring the way the central question gets
+    // buried under successive patches.
+    const centerEmphasis = Math.max(0.35, 1 - state.orders * 0.08);
+    ctxG.save();
+    ctxG.globalAlpha = centerEmphasis;
+    glow(ctxG, p.cx, p.cy, 4, 22, "rgba(166, 23, 45, 0.16)", "rgba(166,23,45,0)");
+    label(ctxG, "MODEL = ?", p.cx + 0, p.cy - 14, C.accent, 13, 700);
+    ctxG.restore();
+    // small marker dot at center
+    disc(ctxG, p.cx, p.cy, 3.0, C.ink);
+
+    // Draw deferents and the bodies riding on them.
+    // Compute SR 26-2's body position first, since carveouts ride on it.
+    const sr262Idx = REGS.findIndex(r => r.id === "sr262");
+    const sr262 = REGS[sr262Idx];
+    const sr262R = sr262.radiusFrac * p.R;
+    const sr262Ang = state.t * sr262.omega + sr262.phase;
+    const sr262x = p.cx + sr262R * Math.cos(sr262Ang);
+    const sr262y = p.cy + sr262R * Math.sin(sr262Ang);
+
+    // Pass 1 — the deferents (faint orbits) for currently-visible regulations.
+    for (let i = 0; i < visibleRegCount; i++) {
+      const r = REGS[i];
+      const orbitR = r.radiusFrac * p.R;
+      const dashSize = r.featured ? 5 : 4;
+      ring(ctxG, p.cx, p.cy, orbitR, r.featured ? "rgba(166,23,45,0.45)" : C.orbit, r.featured ? 1.4 : 1.1, [dashSize, dashSize]);
+    }
+
+    // Pass 2 — bodies on each visible deferent.
+    const bodies = [];
+    for (let i = 0; i < visibleRegCount; i++) {
+      const r = REGS[i];
+      const orbitR = r.radiusFrac * p.R;
+      const ang = state.t * r.omega + r.phase;
+      const x = p.cx + orbitR * Math.cos(ang);
+      const y = p.cy + orbitR * Math.sin(ang);
+      bodies.push({ reg: r, x, y, ang, orbitR });
+    }
+
+    // Pass 3 — carveouts ride on SR 26-2 (only if SR 26-2 is itself visible).
+    const sr262Visible = visibleRegCount > sr262Idx;
+    if (sr262Visible && visibleCarveCount > 0) {
+      // Draw carveout sub-deferents around SR 26-2's body.
+      for (let i = 0; i < visibleCarveCount; i++) {
+        const c = CARVEOUTS[i];
+        const subR = c.parentRadiusFrac * p.R;
+        // Faint accent orbits — clearly child structures, not peers.
+        ring(ctxG, sr262x, sr262y, subR, "rgba(166,23,45,0.55)", 0.9, [2.5, 2.5]);
+      }
+      // Carveout bodies + connectors back to SR 26-2 center.
+      for (let i = 0; i < visibleCarveCount; i++) {
+        const c = CARVEOUTS[i];
+        const subR = c.parentRadiusFrac * p.R;
+        const subAng = state.t * c.omega + c.phase;
+        const cx = sr262x + subR * Math.cos(subAng);
+        const cy = sr262y + subR * Math.sin(subAng);
+        // tiny connector spoke
+        ctxG.save();
+        ctxG.strokeStyle = "rgba(166, 23, 45, 0.45)";
+        ctxG.setLineDash([2, 3]);
+        ctxG.lineWidth = 0.8;
+        ctxG.beginPath();
+        ctxG.moveTo(sr262x, sr262y);
+        ctxG.lineTo(cx, cy);
+        ctxG.stroke();
+        ctxG.restore();
+        // open ring marker — carveouts are negative space (what's *out*)
+        ctxG.save();
+        ctxG.strokeStyle = C.carve;
+        ctxG.fillStyle = "#fdfcf8";
+        ctxG.lineWidth = 1.6;
+        ctxG.beginPath();
+        ctxG.arc(cx, cy, 4.2, 0, Math.PI * 2);
+        ctxG.fill();
+        ctxG.stroke();
+        ctxG.restore();
+        // Carveout label — short, italic-feeling
+        const offsetX = Math.cos(subAng) >= 0 ? 8 : -8;
+        const labelText = c.label;
+        ctxG.save();
+        ctxG.textAlign = offsetX > 0 ? "left" : "right";
+        label(ctxG, labelText, cx + offsetX, cy + 11, C.accent, 9, 600);
+        ctxG.restore();
+      }
+    }
+
+    // Pass 4 — body discs + name labels for each regulation.
+    bodies.forEach(({ reg, x, y, ang, orbitR }) => {
+      const bodyR = reg.featured ? 7 : 5.6;
+      if (reg.featured) {
+        glow(ctxG, x, y, 5, 18, "rgba(166, 23, 45, 0.28)", "rgba(166,23,45,0)");
+      }
+      disc(ctxG, x, y, bodyR, reg.color);
+      // Label placement — push outward along the orbital tangent so the
+      // label sits outside the orbit rather than crashing into the deferent.
+      const radialOutward = orbitR > 0
+        ? { x: (x - p.cx) / orbitR, y: (y - p.cy) / orbitR }
+        : { x: 1, y: 0 };
+      const lx = x + radialOutward.x * (bodyR + 8);
+      const ly = y + radialOutward.y * (bodyR + 8);
+      const align = radialOutward.x >= 0 ? "left" : "right";
+      ctxG.save();
+      ctxG.textAlign = align;
+      label(ctxG, reg.name, lx, ly - 6, C.ink, 11, 700);
+      label(ctxG, reg.anchor, lx, ly + 8, reg.color, 10, 600);
+      ctxG.restore();
+    });
+
+    // Beat: when SR 26-2 first appears, fade in the inset annotation.
+    const beatEl = document.getElementById("sr262Beat");
+    if (sr262Visible) beatEl.classList.add("show");
+    else beatEl.classList.remove("show");
+  }
+
+  // ---- Right panel: the operator view ----
+  // Static architectural schematic. No orbits, no rotation, no planets.
+  // The four words of the definition each occupy a labeled location:
+  //   versioned  — stamp above the box
+  //   typed      — schema labels on the in/out arrows
+  //   operator   — the central labeled box
+  //   separable runtime — dashed outer boundary, deliberately drawn larger
+  //                       than the operator so the gap reads as separation.
+  function drawOp() {
+    const p = dimsFor(opCanvas);
+    ctxO.fillStyle = "#fdfcf8";
+    ctxO.fillRect(0, 0, p.w, p.h);
+
+    // Layout (proportional to canvas, but capped so labels stay sized
+    // sensibly on small viewports — the contrast with the busy left panel
+    // is the point, so the schematic uses generous whitespace).
+    const cx = p.cx;
+    const cy = p.cy;
+    const scale = Math.min(p.R, 240); // cap so type doesn't get goofy-large
+    const boxW = Math.max(110, scale * 0.78);
+    const boxH = Math.max(64,  scale * 0.42);
+    const boxX = cx - boxW / 2;
+    const boxY = cy - boxH / 2;
+
+    const arrowLen = Math.max(58, scale * 0.42);
+    const arrowGap = 8;
+
+    // Runtime boundary — must contain operator + arrows + a comfortable
+    // padding so the "separable" idea reads visually as breathing room.
+    const rtPadX = Math.max(34, scale * 0.18);
+    const rtPadTop = Math.max(56, scale * 0.34);
+    const rtPadBot = Math.max(40, scale * 0.22);
+    const rtX = boxX - arrowLen - arrowGap - rtPadX;
+    const rtY = boxY - rtPadTop;
+    const rtW = boxW + 2 * (arrowLen + arrowGap + rtPadX);
+    const rtH = boxH + rtPadTop + rtPadBot;
+
+    // 1. Runtime boundary — drawn first so everything else sits inside it.
+    ctxO.save();
+    ctxO.strokeStyle = C.muted;
+    ctxO.lineWidth = 1;
+    ctxO.setLineDash([6, 5]);
+    roundRect(ctxO, rtX, rtY, rtW, rtH, 8);
+    ctxO.stroke();
+    ctxO.restore();
+
+    // Runtime label sits in the top-left corner of the runtime box, with
+    // a small paper-colored background so the dashed line reads as
+    // interrupted by the label rather than crossing through it.
+    ctxO.save();
+    ctxO.font = '700 9px "Source Sans 3", Helvetica, Arial, sans-serif';
+    ctxO.textAlign = "left";
+    ctxO.textBaseline = "middle";
+    const rtLabel = "RUNTIME · SEPARABLE";
+    const rtLabelW = ctxO.measureText(rtLabel).width + 10;
+    ctxO.fillStyle = "#fdfcf8";
+    ctxO.fillRect(rtX + 12, rtY - 6, rtLabelW, 12);
+    ctxO.fillStyle = C.muted;
+    ctxO.fillText(rtLabel, rtX + 17, rtY);
+    // tiny brace at corner of runtime box pointing inward
+    ctxO.strokeStyle = C.muted;
+    ctxO.lineWidth = 0.8;
+    ctxO.setLineDash([]);
+    ctxO.beginPath();
+    ctxO.moveTo(rtX + 12 + rtLabelW + 4, rtY);
+    ctxO.lineTo(rtX + 12 + rtLabelW + 12, rtY);
+    ctxO.stroke();
+    ctxO.restore();
+
+    // 2. Version stamp — sits centered above the operator box, with a
+    // small pill so it reads as a label attached to the operator.
+    const stampY = boxY - 22;
+    ctxO.save();
+    ctxO.font = '700 9px "Source Sans 3", Helvetica, Arial, sans-serif';
+    ctxO.textAlign = "center";
+    ctxO.textBaseline = "middle";
+    ctxO.fillStyle = C.muted;
+    ctxO.fillText("VERSIONED", cx, stampY - 14);
+
+    // pill backdrop
+    ctxO.font = '600 12px "JetBrains Mono", monospace';
+    const stampText = "v 1.4.2";
+    const stampW = ctxO.measureText(stampText).width + 18;
+    ctxO.fillStyle = "#fdf2f3";
+    ctxO.strokeStyle = C.accent;
+    ctxO.lineWidth = 1;
+    roundRect(ctxO, cx - stampW / 2, stampY - 8, stampW, 16, 8);
+    ctxO.fill();
+    ctxO.stroke();
+    ctxO.fillStyle = C.accent;
+    ctxO.fillText(stampText, cx, stampY);
+
+    // small downstroke connecting stamp to operator box
+    ctxO.strokeStyle = C.accent;
+    ctxO.setLineDash([2, 2]);
+    ctxO.lineWidth = 0.8;
+    ctxO.beginPath();
+    ctxO.moveTo(cx, stampY + 8);
+    ctxO.lineTo(cx, boxY - 1);
+    ctxO.stroke();
+    ctxO.restore();
+
+    // 3. Input arrow — left side, with typed schema label below the line.
+    const arrowY = cy;
+    const inStartX = boxX - arrowLen - arrowGap;
+    const inEndX = boxX - arrowGap;
+    drawTypedArrow(ctxO, inStartX, arrowY, inEndX, arrowY, "inputs", "schema_in", "in");
+
+    // 4. Output arrow — right side, mirror.
+    const outStartX = boxX + boxW + arrowGap;
+    const outEndX = outStartX + arrowLen;
+    drawTypedArrow(ctxO, outStartX, arrowY, outEndX, arrowY, "outputs", "schema_out", "out");
+
+    // 5. Operator box — central, the named function.
+    ctxO.save();
+    ctxO.fillStyle = C.paper;
+    ctxO.strokeStyle = C.ink;
+    ctxO.lineWidth = 1.6;
+    roundRect(ctxO, boxX, boxY, boxW, boxH, 4);
+    ctxO.fill();
+    ctxO.stroke();
+
+    // OPERATOR title
+    ctxO.fillStyle = C.ink;
+    ctxO.font = '700 14px "Playfair Display", Georgia, serif';
+    ctxO.textAlign = "center";
+    ctxO.textBaseline = "middle";
+    ctxO.fillText("OPERATOR", cx, cy - 8);
+
+    // Subtitle in mono, the function-signature shape — drives home that
+    // the operator is a *function*, not an object or a notebook or a vibe.
+    ctxO.font = '400 11px "JetBrains Mono", monospace';
+    ctxO.fillStyle = C.muted;
+    ctxO.fillText("f ( inputs )  →  outputs", cx, cy + 12);
+    ctxO.restore();
+
+    // 6. Small annotation under the runtime box, naming the four pieces.
+    ctxO.save();
+    ctxO.textAlign = "center";
+    ctxO.textBaseline = "alphabetic";
+    ctxO.font = '400 10px "Source Sans 3", Helvetica, Arial, sans-serif';
+    ctxO.fillStyle = C.muted;
+    const captionY = rtY + rtH + 18;
+    ctxO.fillText("the four words of the definition each occupy a place in the diagram", cx, captionY);
+    ctxO.restore();
+  }
+
+  // Typed-arrow primitive — the same shape used on input and output side.
+  // sideHint distinguishes which side so labels get sensible alignment.
+  function drawTypedArrow(ctx, x0, y0, x1, y1, label1, label2, sideHint) {
+    ctx.save();
+    ctx.strokeStyle = C.ink;
+    ctx.fillStyle = C.ink;
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([]);
+    const dir = x1 >= x0 ? 1 : -1;
+    const headBase = x1 - dir * 8;
+    // shaft
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(headBase, y1);
+    ctx.stroke();
+    // arrowhead
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(headBase, y1 - 5);
+    ctx.lineTo(headBase, y1 + 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // labels — TYPED above (semantic), schema below (technical)
+    const midX = (x0 + x1) / 2;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = '700 9px "Source Sans 3", Helvetica, Arial, sans-serif';
+    ctx.fillStyle = C.muted;
+    ctx.fillText("TYPED " + label1.toUpperCase(), midX, y0 - 14);
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.eu;
+    ctx.fillText(label2, midX, y0 + 18);
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // ---- Animation loop ----
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (state.playing) state.t += dt * state.speed;
+    drawGov();
+    drawOp();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---- Controls ----
+  const playBtn = document.getElementById("playBtn");
+  playBtn.addEventListener("click", () => {
+    state.playing = !state.playing;
+    playBtn.textContent = state.playing ? "Pause" : "Play";
+  });
+
+  const DEFAULTS = { speed: 2, orders: 0 };
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    Object.entries(DEFAULTS).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      el.value = value;
+      el.dispatchEvent(new Event("input"));
+    });
+    state.t = 0;
+    state.playing = true;
+    playBtn.textContent = "Pause";
+  });
+
+  function bindRange(id, valId, transform, format, onChange) {
+    const el = document.getElementById(id);
+    const out = document.getElementById(valId);
+    const apply = () => {
+      const raw = parseFloat(el.value);
+      const v = transform(raw);
+      onChange(v);
+      out.textContent = format(v);
+    };
+    el.addEventListener("input", apply);
+    apply();
+  }
+
+  const SPEED_STOPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3];
+  bindRange("speed", "speedVal",
+    (v) => SPEED_STOPS[Math.round(v)],
+    (v) => v + "×",
+    (v) => { state.speed = v; });
+
+  // Order slider's text changes meaningfully — describe what just got added.
+  const ORDER_LABELS = [
+    "0 of 8 · empty center",
+    "1 of 8 · SR 11-7",
+    "2 of 8 · + NAIC",
+    "3 of 8 · + EU AI Act",
+    "4 of 8 · + OSFI E-23",
+    "5 of 8 · + SR 26-2 (16 days ago)",
+    "6 of 8 · + spreadsheet carveout",
+    "7 of 8 · + GenAI carveout",
+    "8 of 8 · + agentic AI carveout",
+  ];
+
+  // ---- Build the legend dynamically so dim states match the slider ----
+  // IMPORTANT: legend + tracker DOM must exist before the orders slider is
+  // bound, because bindRange calls apply() immediately, which dispatches
+  // updateLegend / updateTracker. If those run before legendEl / tracker
+  // are declared, the const bindings throw a ReferenceError (TDZ).
+  const legendEl = document.getElementById("govLegend");
+  const LEGEND_ITEMS = [
+    { kind: "reg",   color: C.sr117, name: "SR 11-7", short: "quantitative method", index: 0 },
+    { kind: "reg",   color: C.naic,  name: "NAIC",   short: "machine-based system", index: 1 },
+    { kind: "reg",   color: C.eu,    name: "EU AI Act", short: "AI system that infers", index: 2 },
+    { kind: "reg",   color: C.osfi,  name: "OSFI E-23", short: "processes inputs to results", index: 3 },
+    { kind: "reg",   color: C.sr262, name: "SR 26-2", short: "complex … not GenAI", index: 4, featured: true },
+    { kind: "carve", color: C.carve, name: "Carveout", short: "spreadsheets", index: 5 },
+    { kind: "carve", color: C.carve, name: "Carveout", short: "GenAI", index: 6 },
+    { kind: "carve", color: C.carve, name: "Carveout", short: "agentic AI", index: 7 },
+  ];
+  LEGEND_ITEMS.forEach((it) => {
+    const el = document.createElement("div");
+    el.className = "legend-item dim";
+    el.dataset.idx = it.index;
+    const sw = document.createElement("span");
+    sw.className = "swatch" + (it.kind === "carve" ? " carve" : "");
+    if (it.kind === "reg") sw.style.background = it.color;
+    el.appendChild(sw);
+    const txt = document.createElement("span");
+    txt.innerHTML = `<strong style="font-weight:700;">${it.name}</strong> · ${it.short}`;
+    el.appendChild(txt);
+    legendEl.appendChild(el);
+  });
+
+  function updateLegend(orders) {
+    [...legendEl.children].forEach((el) => {
+      const idx = parseInt(el.dataset.idx, 10);
+      el.classList.toggle("dim", idx >= orders);
+    });
+  }
+
+  // ---- Stage tracker — the row of pills under the controls ----
+  // Mirrors the slider but adds dates so the talk's "what year is this?"
+  // beat is always visible. Pills light up as the slider crosses them.
+  const tracker = document.getElementById("tracker");
+  const STAGES = [
+    { name: "SR 11-7", year: "2011" },
+    { name: "NAIC", year: "Dec 2023" },
+    { name: "EU AI Act", year: "2024" },
+    { name: "OSFI E-23", year: "Sep 2025" },
+    { name: "SR 26-2", year: "Apr 2026", featured: true },
+    { name: "spreadsheets out", year: "carveout", small: true },
+    { name: "GenAI out", year: "carveout", small: true },
+    { name: "agentic out", year: "carveout", small: true },
+  ];
+  STAGES.forEach((s, i) => {
+    const pill = document.createElement("span");
+    pill.className = "stage-pill" + (s.featured ? " featured" : "");
+    pill.dataset.idx = i;
+    pill.innerHTML = `<span class="dot"></span><span>${s.name}</span><span class="yr">${s.year}</span>`;
+    tracker.appendChild(pill);
+  });
+  function updateTracker(orders) {
+    [...tracker.children].forEach((el) => {
+      const idx = parseInt(el.dataset.idx, 10);
+      el.classList.toggle("active", idx < orders);
+    });
+  }
+
+  // Now safe to bind — legendEl, tracker, and their update fns are ready.
+  bindRange("orders", "ordersVal",
+    (v) => Math.round(v),
+    (v) => ORDER_LABELS[v],
+    (v) => { state.orders = v; updateTracker(v); updateLegend(v); });
+})();
+</script>
+</body>
+</html>

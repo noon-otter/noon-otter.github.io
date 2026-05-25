@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A Model Is a Typed Operator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+<!-- KaTeX for proper math typesetting in the algebra equations and case-study annotations -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+        onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '$', right: '$', display: false},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  :root {
+    --bg: #f7f3ea;
+    --paper: #ffffff;
+    --paper-warm: #fdfcf8;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --rule: #d9d3c4;
+    --rule-strong: #b9b1a0;
+
+    --accent: #a6172d;
+    --accent-soft: rgba(166, 23, 45, 0.18);
+
+    --c-input:   #2c5f8d;   /* blue — typed input X */
+    --c-output:  #b8542c;   /* amber — typed output Y */
+    --c-op:      #1a1a1a;   /* ink — the operator itself */
+    --c-data:    #6b7d3a;   /* olive — Ω_data */
+    --c-compute: #3b6e8a;   /* teal — Ω_compute */
+    --c-config:  #8a5a3a;   /* umber — Ω_config */
+    --c-router:  #6f3d6e;   /* plum — dynamic router */
+    --c-version: #a6172d;   /* red — version index */
+
+    --orbit: #c8c1b1;
+    --orbit-soft: #ddd6c5;
+
+    --serif: "Playfair Display", "Times New Roman", Georgia, serif;
+    --sans:  "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+    --mono:  "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 22px 22px 36px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1320px; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(24px, 2.8vw, 36px);
+    line-height: 1.06;
+    letter-spacing: -0.012em;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .dek {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(14px, 1.3vw, 16px);
+    color: #3a3a3a;
+    max-width: 1020px;
+    margin: 0 0 16px;
+    line-height: 1.42;
+  }
+
+  /* ---------- panels ---------- */
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 9px;
+    margin-bottom: 12px;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .panel-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.1;
+  }
+  .panel-title small {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 10px;
+    letter-spacing: 0;
+  }
+  .panel-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ---------- atom row ---------- */
+  .atom-grid {
+    display: grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 1020px) { .atom-grid { grid-template-columns: 1fr; } }
+
+  .atom-svg-wrap {
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    padding: 10px;
+    position: relative;
+  }
+  .atom-svg-wrap svg { display: block; width: 100%; height: auto; }
+  .atom-caption {
+    position: absolute;
+    top: 16px;
+    left: 18px;
+    font-family: var(--sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    background: rgba(253, 252, 248, 0.85);
+    padding: 4px 8px;
+  }
+
+  .atom-key {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .formal {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.55;
+    color: #2a2a2a;
+  }
+  .formal .sig {
+    font-family: var(--mono);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--ink);
+    display: block;
+    margin: 6px 0 10px;
+    letter-spacing: 0;
+  }
+  .formal .sig .v {
+    color: var(--c-version);
+    font-size: 12px;
+    vertical-align: super;
+    font-weight: 700;
+  }
+  .formal em { font-style: italic; color: var(--accent); }
+
+  .axiom-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .axiom {
+    border: 1px solid var(--rule);
+    padding: 8px 9px 9px;
+    background: var(--paper-warm);
+  }
+  .axiom .num {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+  .axiom .name {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.1;
+    margin-bottom: 3px;
+  }
+  .axiom .gloss {
+    font-family: var(--sans);
+    font-size: 10.5px;
+    color: #444;
+    line-height: 1.32;
+  }
+
+  .keyrow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 18px;
+    border-top: 1px solid var(--rule);
+    padding-top: 12px;
+  }
+  .keyrow .item {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.4;
+  }
+  .keyrow .item .lab {
+    font-family: var(--sans);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--muted);
+  }
+  .keyrow .item .lab .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: 0;
+  }
+
+  /* ---------- algebra strip ---------- */
+  .algebra {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 980px) {
+    .algebra { grid-template-columns: repeat(2, 1fr); }
+  }
+  .alg-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 10px 11px 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  .alg-card .alg-eyebrow {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 1px;
+  }
+  .alg-card .alg-name {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 17px;
+    margin-bottom: 2px;
+  }
+  .alg-card .alg-notation {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    letter-spacing: 0;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .alg-card svg { display: block; width: 100%; height: auto; margin-top: 2px; }
+  .alg-card .alg-eqn {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--paper-warm);
+    border-top: 1px solid var(--rule);
+    padding: 9px 4px 6px;
+    margin-top: 8px;
+    text-align: center;
+    letter-spacing: 0;
+  }
+  .alg-card .alg-deriv {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 6px;
+    letter-spacing: 0;
+    line-height: 1.3;
+  }
+  .alg-card .alg-deriv .lab {
+    color: var(--muted);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .alg-card .alg-gloss {
+    font-family: var(--sans);
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dotted var(--rule);
+    line-height: 1.32;
+    text-align: center;
+  }
+
+  /* ---------- case studies ---------- */
+  .cases {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 980px) { .cases { grid-template-columns: 1fr; } }
+  .case-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .case-card .case-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .case-card .case-name {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .case-card .case-notation {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .case-svg-wrap {
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    padding: 10px;
+  }
+  .case-svg-wrap svg { display: block; width: 100%; height: auto; }
+  .case-card .case-eqn {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--paper-warm);
+    border-top: 1px solid var(--rule);
+    padding: 11px 6px 8px;
+    margin-top: 10px;
+    text-align: center;
+    letter-spacing: 0;
+  }
+  .case-card .case-deriv {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 8px;
+    letter-spacing: 0;
+    line-height: 1.35;
+  }
+  .case-card .case-deriv .lab {
+    color: var(--muted);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .case-card .case-gloss {
+    font-family: var(--sans);
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dotted var(--rule);
+    line-height: 1.4;
+    text-align: center;
+  }
+  .case-foot {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 22px;
+  }
+  .case-foot .factoid {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .case-foot .factoid .lab {
+    font-family: var(--sans);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    color: var(--muted);
+    flex: 0 0 96px;
+    line-height: 1.3;
+  }
+  .case-foot .factoid .body { flex: 1; }
+  .case-foot .factoid .num {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    margin-right: 6px;
+  }
+  .case-foot .factoid em { font-style: italic; color: var(--accent); }
+
+  /* ---------- notes ---------- */
+  .notes {
+    border-top: 2px solid var(--ink);
+    padding-top: 18px;
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2a2a2a;
+    column-count: 3;
+    column-gap: 32px;
+    column-rule: 1px solid var(--rule);
+  }
+  @media (max-width: 880px) { .notes { column-count: 1; } }
+  .notes p { margin: 0 0 12px; break-inside: avoid; }
+  .notes strong {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    display: inline-block;
+    margin-right: 4px;
+  }
+  .notes em { color: var(--accent); font-style: italic; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: rgba(166, 23, 45, 0.06);
+    padding: 1px 4px;
+    color: var(--ink);
+  }
+
+  .byline {
+    font-family: var(--sans);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 26px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* ---------- shared SVG styling ---------- */
+  .label-sans {
+    font-family: "Source Sans 3", Helvetica, Arial, sans-serif;
+    fill: var(--ink);
+  }
+  .label-serif {
+    font-family: "Playfair Display", Georgia, serif;
+    fill: var(--ink);
+  }
+  .label-mono {
+    font-family: "JetBrains Mono", monospace;
+    fill: var(--ink);
+  }
+  .lab-eyebrow {
+    font-family: "Source Sans 3", Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    fill: var(--muted);
+    font-weight: 700;
+  }
+  .lab-muted { fill: var(--muted); }
+  .lab-accent { fill: var(--accent); }
+
+  /* flowing-dash animation for type signatures.
+     Each keyframe's end-offset must be an integer multiple of its dash
+     period so the loop closes seamlessly. flow-fast uses 6+4=10
+     (offset −30 = 3 periods); flow-slow uses 6+6=12 (offset −24 = 2
+     periods, also divides 3+3=6 used by Ω-feed paths). */
+  @keyframes flow-fast-anim {
+    to { stroke-dashoffset: -30; }
+  }
+  @keyframes flow-slow-anim {
+    to { stroke-dashoffset: -24; }
+  }
+  .flow-fast {
+    stroke-dasharray: 6 4;
+    animation: flow-fast-anim 1.6s linear infinite;
+  }
+  .flow-slow {
+    stroke-dasharray: 6 6;
+    animation: flow-slow-anim 4.5s linear infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.95; }
+    50% { opacity: 0.55; }
+  }
+  .pulse { animation: pulse 2.2s ease-in-out infinite; }
+
+  /* hover affordances on the atom diagram */
+  .hot:hover { cursor: help; }
+  .hot:hover .hot-fill { fill: rgba(166, 23, 45, 0.06); }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="eyebrow">An Illustrated Framework for Model Risk Management</div>
+  <h1>A Model Is a <em>Typed Operator</em>.</h1>
+  <p class="dek">A model takes an input, runs in an environment, and returns an output. Pin the version and the rest of governance falls out as algebra: composition, parallel execution, versioning, dynamic routing — and a chain rule that lets risk propagate through any pipeline you can draw, from a Black–Scholes pricer to a tool-using agent.</p>
+
+  <!-- ======================================================== -->
+  <!-- PANEL 1 — THE ATOM                                        -->
+  <!-- ======================================================== -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">The Atom <small>M<sup style="color:var(--accent);font-size:10px">v</sup> : X × Ω → Y</small></div>
+      <div class="panel-sub">One operator · one version · one type</div>
+    </div>
+
+    <div class="atom-grid">
+
+      <!-- LEFT: the big diagram ------------------------------- -->
+      <div class="atom-svg-wrap">
+        <div class="atom-caption">A versioned, immutable, typed operator</div>
+        <svg viewBox="0 0 760 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of a typed operator with input X, environment Omega, and output Y">
+
+          <defs>
+            <!-- arrow heads -->
+            <marker id="arrInput" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-input)"/>
+            </marker>
+            <marker id="arrOutput" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-output)"/>
+            </marker>
+            <marker id="arrData" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-data)"/>
+            </marker>
+            <marker id="arrCompute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-compute)"/>
+            </marker>
+            <marker id="arrConfig" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-config)"/>
+            </marker>
+
+            <pattern id="diag-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M40,0 L0,0 L0,40" fill="none" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+            </pattern>
+          </defs>
+
+          <!-- subtle grid background (drafting paper feel) -->
+          <rect x="0" y="0" width="760" height="350" fill="url(#diag-grid)"/>
+
+          <!-- ============== TITLE (top, above environment) ============== -->
+          <text x="380" y="26" class="label-serif" font-size="18" font-weight="700"
+                text-anchor="middle">The Operator</text>
+
+          <!-- ============== INPUT (left) ============== -->
+          <g transform="translate(0, 0)">
+            <text x="40" y="118" class="lab-eyebrow">Typed Input · X</text>
+            <text x="40" y="134" class="label-mono" font-size="14" font-weight="600" fill="var(--c-input)">x ∈ X</text>
+
+            <!-- input chip showing structure (aligned with operator: y=140–240) -->
+            <g transform="translate(40, 140)">
+              <rect x="0" y="0" width="148" height="100" fill="#fff" stroke="var(--c-input)" stroke-width="1.2"/>
+              <line x1="0" y1="22" x2="148" y2="22" stroke="var(--c-input)" stroke-width="0.6" opacity="0.4"/>
+              <text x="8" y="15" class="label-mono" font-size="9" fill="var(--c-input)" font-weight="600">X = (x₁, x₂, …, xₙ)</text>
+              <text x="8" y="40" class="label-mono" font-size="10.5" fill="#333">type:  ℝⁿ</text>
+              <text x="8" y="56" class="label-mono" font-size="10.5" fill="#333">dim:   n = 32</text>
+              <text x="8" y="72" class="label-mono" font-size="10.5" fill="#333">domain: D ⊂ X</text>
+              <text x="8" y="88" class="label-mono" font-size="10.5" fill="#333">prov:  upstream</text>
+            </g>
+
+            <!-- the input arrow -->
+            <line x1="190" y1="190" x2="278" y2="190"
+                  stroke="var(--c-input)" stroke-width="2"
+                  marker-end="url(#arrInput)"
+                  class="flow-fast"/>
+            <text x="220" y="183" class="label-mono" font-size="10" fill="var(--c-input)" text-anchor="middle">x</text>
+            <text x="220" y="206" class="lab-eyebrow" text-anchor="middle">∂y/∂x</text>
+          </g>
+
+          <!-- ============== ENVIRONMENT (top) ============== -->
+          <g transform="translate(0, 0)">
+            <!-- container bracket -->
+            <text x="380" y="46" class="lab-eyebrow" text-anchor="middle">Environment · Ω(t)</text>
+
+            <!-- three Ω components arranged above the operator -->
+            <g transform="translate(286, 52)">
+              <!-- Ω_data -->
+              <g>
+                <rect x="0" y="0" width="62" height="34" fill="#fff" stroke="var(--c-data)" stroke-width="1"/>
+                <text x="31" y="14" class="label-mono" font-size="9" fill="var(--c-data)" font-weight="600" text-anchor="middle">Ω_data</text>
+                <text x="31" y="26" class="label-mono" font-size="8" fill="#444" text-anchor="middle">daily</text>
+              </g>
+              <!-- Ω_compute -->
+              <g transform="translate(72, 0)">
+                <rect x="0" y="0" width="62" height="34" fill="#fff" stroke="var(--c-compute)" stroke-width="1"/>
+                <text x="31" y="14" class="label-mono" font-size="9" fill="var(--c-compute)" font-weight="600" text-anchor="middle">Ω_compute</text>
+                <text x="31" y="26" class="label-mono" font-size="8" fill="#444" text-anchor="middle">quarterly</text>
+              </g>
+              <!-- Ω_config -->
+              <g transform="translate(144, 0)">
+                <rect x="0" y="0" width="62" height="34" fill="#fff" stroke="var(--c-config)" stroke-width="1"/>
+                <text x="31" y="14" class="label-mono" font-size="9" fill="var(--c-config)" font-weight="600" text-anchor="middle">Ω_config</text>
+                <text x="31" y="26" class="label-mono" font-size="8" fill="#444" text-anchor="middle">deliberate</text>
+              </g>
+            </g>
+
+            <!-- streams flowing into the box top -->
+            <path d="M 317,86 C 317,110 350,130 380,140"
+                  fill="none" stroke="var(--c-data)" stroke-width="1.4"
+                  marker-end="url(#arrData)"
+                  class="flow-slow"/>
+            <path d="M 389,86 L 389,140"
+                  fill="none" stroke="var(--c-compute)" stroke-width="1.4"
+                  marker-end="url(#arrCompute)"
+                  class="flow-slow"/>
+            <path d="M 461,86 C 461,110 428,130 398,140"
+                  fill="none" stroke="var(--c-config)" stroke-width="1.4"
+                  marker-end="url(#arrConfig)"
+                  class="flow-slow"/>
+
+          </g>
+
+          <!-- ============== THE OPERATOR ============== -->
+          <g transform="translate(280, 140)">
+
+            <!-- soft glow halo -->
+            <rect x="-4" y="-4" width="232" height="108" fill="rgba(0,0,0,0.04)"/>
+
+            <!-- the box -->
+            <rect x="0" y="0" width="224" height="100" fill="#fff" stroke="var(--c-op)" stroke-width="1.6"/>
+
+            <!-- inner double rule (NYT chapeau) -->
+            <line x1="0" y1="22" x2="224" y2="22" stroke="var(--c-op)" stroke-width="0.6"/>
+            <text x="11" y="15" class="label-mono" font-size="9.5" fill="var(--c-op)" font-weight="600">M</text>
+            <text x="22" y="11" class="label-mono" font-size="8" fill="var(--c-version)" font-weight="700">v</text>
+            <text x="32" y="15" class="lab-muted" font-size="9.5" font-family="JetBrains Mono">: X × Ω → Y</text>
+
+            <!-- the operator glyph -->
+            <g transform="translate(112, 65)">
+              <text class="label-serif" font-size="42" font-style="italic" font-weight="700"
+                    text-anchor="middle" dominant-baseline="middle" fill="var(--c-op)">ƒ</text>
+            </g>
+
+            <!-- version stamp (bottom-right corner) -->
+            <g transform="translate(176, 76)">
+              <rect x="0" y="0" width="42" height="18" fill="var(--c-version)" stroke="none"/>
+              <text x="21" y="13" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700"
+                    fill="#fff" text-anchor="middle">v = 7</text>
+            </g>
+
+          </g>
+
+          <!-- ============== OUTPUT (right) ============== -->
+          <g transform="translate(0, 0)">
+            <!-- output arrow -->
+            <line x1="504" y1="190" x2="572" y2="190"
+                  stroke="var(--c-output)" stroke-width="2"
+                  marker-end="url(#arrOutput)"
+                  class="flow-fast"/>
+            <text x="538" y="183" class="label-mono" font-size="10" fill="var(--c-output)" text-anchor="middle">y</text>
+            <text x="538" y="206" class="lab-eyebrow" text-anchor="middle">∂y/∂Ω</text>
+
+            <text x="580" y="118" class="lab-eyebrow" text-anchor="start">Typed Output · Y</text>
+            <text x="580" y="134" class="label-mono" font-size="14" font-weight="600" fill="var(--c-output)">y ∈ Y</text>
+
+            <!-- output chip aligned with operator: y=140–240 -->
+            <g transform="translate(580, 140)">
+              <rect x="0" y="0" width="148" height="100" fill="#fff" stroke="var(--c-output)" stroke-width="1.2"/>
+              <line x1="0" y1="22" x2="148" y2="22" stroke="var(--c-output)" stroke-width="0.6" opacity="0.4"/>
+              <text x="8" y="15" class="label-mono" font-size="9" fill="var(--c-output)" font-weight="600">y = ƒ(x, Ω)</text>
+              <text x="8" y="40" class="label-mono" font-size="10.5" fill="#333">type:   ℝᵐ</text>
+              <text x="8" y="56" class="label-mono" font-size="10.5" fill="#333">dim:    m = 1</text>
+              <text x="8" y="72" class="label-mono" font-size="10.5" fill="#333">range:  bounded</text>
+              <text x="8" y="88" class="label-mono" font-size="10.5" fill="#333">audit:  hashed</text>
+            </g>
+          </g>
+
+          <!-- ============== VERSION TRANSITION (below) ============== -->
+          <g transform="translate(0, 240)">
+            <text x="380" y="14" class="lab-eyebrow" text-anchor="middle">Version Transition · T : (M<tspan baseline-shift="super" font-size="7">v</tspan>, Δ) → M<tspan baseline-shift="super" font-size="7">v+1</tspan></text>
+
+            <!-- timeline -->
+            <line x1="80" y1="60" x2="680" y2="60" stroke="var(--rule-strong)" stroke-width="1"/>
+            <line x1="80" y1="56" x2="80" y2="64" stroke="var(--rule-strong)" stroke-width="1"/>
+            <line x1="680" y1="56" x2="680" y2="64" stroke="var(--rule-strong)" stroke-width="1"/>
+
+            <!-- version pips -->
+            <g font-family="JetBrains Mono" font-size="9.5">
+              <g transform="translate(110, 60)">
+                <circle r="4.5" fill="#fff" stroke="var(--c-version)" stroke-width="1.4"/>
+                <text y="22" text-anchor="middle" fill="var(--c-version)" font-weight="700">v=4</text>
+                <text y="-12" text-anchor="middle" fill="var(--muted)" font-size="8">retrain</text>
+              </g>
+              <g transform="translate(220, 60)">
+                <circle r="4.5" fill="#fff" stroke="var(--c-version)" stroke-width="1.4"/>
+                <text y="22" text-anchor="middle" fill="var(--c-version)" font-weight="700">v=5</text>
+                <text y="-12" text-anchor="middle" fill="var(--muted)" font-size="8">code patch</text>
+              </g>
+              <g transform="translate(345, 60)">
+                <circle r="4.5" fill="#fff" stroke="var(--c-version)" stroke-width="1.4"/>
+                <text y="22" text-anchor="middle" fill="var(--c-version)" font-weight="700">v=6</text>
+                <text y="-12" text-anchor="middle" fill="var(--muted)" font-size="8">LoRA adapter</text>
+              </g>
+              <g transform="translate(490, 60)">
+                <circle r="6" fill="var(--c-version)" stroke="var(--c-version)" stroke-width="1.4"/>
+                <text y="22" text-anchor="middle" fill="var(--c-version)" font-weight="700">v=7 · current</text>
+                <text y="-12" text-anchor="middle" fill="var(--muted)" font-size="8">recalibration</text>
+              </g>
+              <g transform="translate(620, 60)">
+                <circle r="4.5" fill="#fff" stroke="var(--rule-strong)" stroke-width="1.4" stroke-dasharray="2 2"/>
+                <text y="22" text-anchor="middle" fill="var(--muted)" font-weight="700">v=8?</text>
+                <text y="-12" text-anchor="middle" fill="var(--muted)" font-size="8">pending Δ</text>
+              </g>
+            </g>
+
+            <!-- magnitude under -->
+            <text x="380" y="100" class="lab-eyebrow" text-anchor="middle" fill="var(--c-version)">∂y/∂v · the magnitude of each transition is itself a measurable quantity</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- RIGHT: keys + axioms -------------------------------- -->
+      <div class="atom-key">
+        <div class="formal">
+          <span class="lab-eyebrow" style="display:block; margin-bottom:6px;">Definition · The Model</span>
+          <span class="sig">M<span class="v">v</span> : X × Ω ⟶ Y</span>
+          A model is a <em>versioned, immutable, typed operator</em>. The triple <span style="font-family:var(--mono); font-size:13px">(M<span style="color:var(--c-version); font-size:10px; vertical-align:super; font-weight:700">v</span>, x, Ω)</span> is the complete contract: pin all three and the invocation is reproducible. Drop any one and it is not.
+        </div>
+
+        <div>
+          <span class="lab-eyebrow" style="display:block; margin-bottom:6px; color:var(--muted)">Five axioms · everything else follows</span>
+          <div class="axiom-grid">
+            <div class="axiom">
+              <div class="num">I</div>
+              <div class="name">Immutability</div>
+              <div class="gloss">M<sup>v</sup> never changes. Any edit creates v+1.</div>
+            </div>
+            <div class="axiom">
+              <div class="num">II</div>
+              <div class="name">Typing</div>
+              <div class="gloss">Wires only fit if (X, Ω, Y) match. No accidental coupling.</div>
+            </div>
+            <div class="axiom">
+              <div class="num">III</div>
+              <div class="name">Closure</div>
+              <div class="gloss">Any composition that satisfies the definition is itself a model.</div>
+            </div>
+            <div class="axiom">
+              <div class="num">IV</div>
+              <div class="name">Identity</div>
+              <div class="gloss">A passthrough I<sub>X</sub> exists for every type X.</div>
+            </div>
+            <div class="axiom">
+              <div class="num">V</div>
+              <div class="name">Associativity</div>
+              <div class="gloss">(M₃ ∘ M₂) ∘ M₁ = M₃ ∘ (M₂ ∘ M₁). Grouping is free.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyrow">
+          <div class="item">
+            <div class="lab"><span class="dot" style="background:var(--c-input)"></span>X · Input</div>
+            What the caller hands in. Crosses the boundary inward.
+          </div>
+          <div class="item">
+            <div class="lab"><span class="dot" style="background:var(--c-output)"></span>Y · Output</div>
+            What the model returns. Hashed for audit.
+          </div>
+          <div class="item">
+            <div class="lab"><span class="dot" style="background:var(--c-data)"></span>Ω<sub>data</sub></div>
+            Feeds, retrieval corpora, reference tables.
+          </div>
+          <div class="item">
+            <div class="lab"><span class="dot" style="background:var(--c-compute)"></span>Ω<sub>compute</sub></div>
+            OS, hardware, FP determinism.
+          </div>
+          <div class="item">
+            <div class="lab"><span class="dot" style="background:var(--c-config)"></span>Ω<sub>config</sub></div>
+            Thresholds, flags, seeds, system prompts, temperature.
+          </div>
+          <div class="item">
+            <div class="lab"><span class="dot" style="background:var(--c-version)"></span>v · Version</div>
+            Strictly ordered. Increments on any code or parameter change.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- PANEL 2 — THE ALGEBRA                                    -->
+  <!-- ======================================================== -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">The Algebra <small>four operations · everything orchestrable reduces to these</small></div>
+      <div class="panel-sub">Closure guarantees the result is again a model</div>
+    </div>
+
+    <div class="algebra">
+
+      <!-- A. COMPOSITION ------------------------------------- -->
+      <div class="alg-card">
+        <div class="alg-eyebrow">A. SEQUENCE</div>
+        <div class="alg-name">Composition</div>
+        <div class="alg-notation">M₂ ∘ M₁  ·  the chain rule</div>
+        <svg viewBox="0 14 320 115" xmlns="http://www.w3.org/2000/svg" aria-label="Composition diagram">
+          <defs>
+            <marker id="arr-comp-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-input)"/>
+            </marker>
+            <marker id="arr-comp-mid" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--ink)"/>
+            </marker>
+            <marker id="arr-comp-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-output)"/>
+            </marker>
+          </defs>
+
+          <!-- input -->
+          <text x="20" y="76" class="label-mono" font-size="11" fill="var(--c-input)" text-anchor="middle">x</text>
+          <line x1="32" y1="80" x2="78" y2="80" stroke="var(--c-input)" stroke-width="1.6" marker-end="url(#arr-comp-in)" class="flow-fast"/>
+
+          <!-- M1 box -->
+          <g transform="translate(80, 56)">
+            <rect width="64" height="48" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="32" y="28" class="label-serif" font-size="20" font-weight="700" font-style="italic" text-anchor="middle">M₁</text>
+            <text x="32" y="44" class="label-mono" font-size="8" fill="var(--muted)" text-anchor="middle">X → Z</text>
+          </g>
+
+          <!-- mid arrow -->
+          <line x1="146" y1="80" x2="178" y2="80" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#arr-comp-mid)" class="flow-fast"/>
+          <text x="162" y="73" class="label-mono" font-size="10" text-anchor="middle">z</text>
+
+          <!-- M2 box -->
+          <g transform="translate(180, 56)">
+            <rect width="64" height="48" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="32" y="28" class="label-serif" font-size="20" font-weight="700" font-style="italic" text-anchor="middle">M₂</text>
+            <text x="32" y="44" class="label-mono" font-size="8" fill="var(--muted)" text-anchor="middle">Z → Y</text>
+          </g>
+
+          <!-- output -->
+          <line x1="246" y1="80" x2="290" y2="80" stroke="var(--c-output)" stroke-width="1.6" marker-end="url(#arr-comp-out)" class="flow-fast"/>
+          <text x="302" y="76" class="label-mono" font-size="11" fill="var(--c-output)" text-anchor="middle">y</text>
+        </svg>
+        <div class="alg-eqn">$ (M_2 \circ M_1)(x, \Omega) \;=\; M_2\!\bigl(\, M_1(x, \Omega_1),\; \Omega_2 \,\bigr) $</div>
+        <div class="alg-deriv"><span class="lab">end-to-end sensitivity</span>∂y/∂x = (∂M₂/∂z)(∂M₁/∂x)</div>
+        <div class="alg-gloss">Sensitivities multiply. Risk in any component flows downstream — bounded by the product of Lipschitz constants.</div>
+      </div>
+
+      <!-- B. PARALLEL ---------------------------------------- -->
+      <div class="alg-card">
+        <div class="alg-eyebrow">B. ENSEMBLE</div>
+        <div class="alg-name">Parallel Product</div>
+        <div class="alg-notation">M₁ × M₂  ·  champion vs. challenger</div>
+        <svg viewBox="0 14 320 115" xmlns="http://www.w3.org/2000/svg" aria-label="Parallel diagram">
+          <defs>
+            <marker id="arr-par-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-input)"/>
+            </marker>
+            <marker id="arr-par-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-output)"/>
+            </marker>
+          </defs>
+
+          <!-- input -->
+          <text x="22" y="76" class="label-mono" font-size="11" fill="var(--c-input)" text-anchor="middle">x</text>
+          <line x1="34" y1="80" x2="80" y2="80" stroke="var(--c-input)" stroke-width="1.6" class="flow-fast"/>
+
+          <!-- fan-out -->
+          <circle cx="84" cy="80" r="3.5" fill="var(--ink)"/>
+          <path d="M 88,80 C 110,80 112,46 130,46" fill="none" stroke="var(--c-input)" stroke-width="1.4" marker-end="url(#arr-par-in)" class="flow-fast"/>
+          <path d="M 88,80 C 110,80 112,102 130,102" fill="none" stroke="var(--c-input)" stroke-width="1.4" marker-end="url(#arr-par-in)" class="flow-fast"/>
+
+          <!-- M1 box -->
+          <g transform="translate(132, 26)">
+            <rect width="60" height="40" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="30" y="22" class="label-serif" font-size="16" font-weight="700" font-style="italic" text-anchor="middle">M₁</text>
+            <text x="30" y="36" class="label-mono" font-size="7" fill="var(--muted)" text-anchor="middle">champion</text>
+          </g>
+
+          <!-- M2 box -->
+          <g transform="translate(132, 82)">
+            <rect width="60" height="40" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="30" y="22" class="label-serif" font-size="16" font-weight="700" font-style="italic" text-anchor="middle">M₂</text>
+            <text x="30" y="36" class="label-mono" font-size="7" fill="var(--muted)" text-anchor="middle">challenger</text>
+          </g>
+
+          <!-- fan-in -->
+          <path d="M 192,46 C 214,46 218,80 240,80" fill="none" stroke="var(--c-output)" stroke-width="1.4" class="flow-fast"/>
+          <path d="M 192,102 C 214,102 218,80 240,80" fill="none" stroke="var(--c-output)" stroke-width="1.4" class="flow-fast"/>
+          <circle cx="240" cy="80" r="3.5" fill="var(--ink)"/>
+
+          <!-- output -->
+          <line x1="244" y1="80" x2="278" y2="80" stroke="var(--c-output)" stroke-width="1.6" marker-end="url(#arr-par-out)" class="flow-fast"/>
+          <text x="294" y="76" class="label-mono" font-size="11" fill="var(--c-output)" text-anchor="middle">(y₁,y₂)</text>
+        </svg>
+        <div class="alg-eqn">$ (M_1 \times M_2)(x, \Omega) \;=\; \bigl(\, M_1(x, \Omega_1),\; M_2(x, \Omega_2) \,\bigr) $</div>
+        <div class="alg-deriv"><span class="lab">branch sensitivities</span>∂y/∂x = (∂M₁/∂x, ∂M₂/∂x)</div>
+        <div class="alg-gloss">Subadditive risk: ℛ(M₁ × M₂) ≤ ℛ(M₁) + ℛ(M₂). Shared Ω couples the branches.</div>
+      </div>
+
+      <!-- C. VERSIONING -------------------------------------- -->
+      <div class="alg-card">
+        <div class="alg-eyebrow">C. EVOLUTION</div>
+        <div class="alg-name">Versioning</div>
+        <div class="alg-notation">T  ·  the higher-risk operator</div>
+        <svg viewBox="0 14 320 115" xmlns="http://www.w3.org/2000/svg" aria-label="Versioning diagram">
+          <defs>
+            <marker id="arr-ver" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-version)"/>
+            </marker>
+            <marker id="arr-ver-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--ink)"/>
+            </marker>
+          </defs>
+
+          <!-- M^v · current -->
+          <g transform="translate(30, 60)">
+            <rect width="70" height="44" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+            <text x="33" y="30" class="label-serif" font-size="22" font-weight="700" font-style="italic" text-anchor="middle">M</text>
+            <text x="50" y="20" class="label-serif" font-size="12" font-weight="600" font-style="italic" fill="var(--muted)" text-anchor="middle">v</text>
+            <text x="35" y="40" class="label-mono" font-size="8" fill="var(--muted)" text-anchor="middle">current</text>
+          </g>
+
+          <!-- arrow M^v → T (ink, neutral) -->
+          <line x1="100" y1="82" x2="135" y2="82" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#arr-ver-ink)" class="flow-fast"/>
+
+          <!-- Δ trigger fed into T from above -->
+          <g>
+            <rect x="146" y="28" width="28" height="22" fill="var(--c-version)" stroke="none"/>
+            <text x="160" y="44" font-family="Playfair Display, Georgia, serif" font-size="14" font-weight="700" style="fill:#fff" text-anchor="middle">Δ</text>
+            <line x1="160" y1="50" x2="160" y2="62" stroke="var(--c-version)" stroke-width="1.4" marker-end="url(#arr-ver)"/>
+          </g>
+
+          <!-- T operator box (the transition itself is a model) -->
+          <g transform="translate(138, 64)">
+            <rect width="44" height="36" fill="#fff" stroke="var(--c-version)" stroke-width="1.6"/>
+            <text x="22" y="25" class="label-serif" font-size="18" font-weight="700" font-style="italic" fill="var(--c-version)" text-anchor="middle">T</text>
+          </g>
+
+          <!-- arrow T → M^{v+1} (red) -->
+          <line x1="182" y1="82" x2="217" y2="82" stroke="var(--c-version)" stroke-width="1.6" marker-end="url(#arr-ver)" class="flow-fast"/>
+
+          <!-- M^{v+1} · next -->
+          <g transform="translate(220, 60)">
+            <rect width="70" height="44" fill="#fff" stroke="var(--c-version)" stroke-width="1.4"/>
+            <text x="30" y="30" class="label-serif" font-size="22" font-weight="700" font-style="italic" text-anchor="middle">M</text>
+            <text x="52" y="20" class="label-serif" font-size="12" font-weight="600" font-style="italic" fill="var(--c-version)" text-anchor="middle">v+1</text>
+            <text x="35" y="40" class="label-mono" font-size="8" fill="var(--muted)" text-anchor="middle">next</text>
+          </g>
+        </svg>
+        <div class="alg-eqn">$ T \,:\, (M^{v}, \Delta) \;\longrightarrow\; M^{v+1} $</div>
+        <div class="alg-deriv"><span class="lab">version sensitivity</span>∂y/∂v = d( y(M<sup>v+1</sup>),  y(M<sup>v</sup>) )</div>
+        <div class="alg-gloss">A version transition is itself a model. Its <em>magnitude</em> can trigger automatic revalidation.</div>
+      </div>
+
+      <!-- D. DYNAMIC ROUTING --------------------------------- -->
+      <div class="alg-card">
+        <div class="alg-eyebrow">D. AGENCY</div>
+        <div class="alg-name">Dynamic Routing</div>
+        <div class="alg-notation">R selects M<sub>i</sub>  ·  routing is itself a model</div>
+        <svg viewBox="0 16 320 115" xmlns="http://www.w3.org/2000/svg" aria-label="Dynamic routing diagram">
+          <defs>
+            <marker id="arr-rt-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-input)"/>
+            </marker>
+            <marker id="arr-rt-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-output)"/>
+            </marker>
+            <marker id="arr-router" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-router)"/>
+            </marker>
+          </defs>
+
+          <!-- input -->
+          <text x="20" y="76" class="label-mono" font-size="11" fill="var(--c-input)" text-anchor="middle">x</text>
+          <line x1="32" y1="80" x2="68" y2="80" stroke="var(--c-input)" stroke-width="1.6" marker-end="url(#arr-rt-in)" class="flow-fast"/>
+
+          <!-- Router R (diamond) -->
+          <g transform="translate(72, 56)">
+            <polygon points="24,0 48,24 24,48 0,24" fill="#fff" stroke="var(--c-router)" stroke-width="1.6"/>
+            <text x="24" y="22" class="label-serif" font-size="16" font-weight="700" font-style="italic" text-anchor="middle" fill="var(--c-router)">R</text>
+            <text x="24" y="36" class="label-mono" font-size="7" fill="var(--c-router)" text-anchor="middle">router</text>
+          </g>
+
+          <!-- branches with probability annotations -->
+          <path d="M 120,80 C 142,80 148,34 168,34" fill="none" stroke="var(--c-router)" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#arr-router)"/>
+          <path d="M 120,80 C 142,80 148,72 168,72" fill="none" stroke="var(--c-router)" stroke-width="2.2" marker-end="url(#arr-router)"/>
+          <path d="M 120,80 C 142,80 148,110 168,110" fill="none" stroke="var(--c-router)" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#arr-router)"/>
+
+
+          <!-- candidate sub-models -->
+          <g transform="translate(170, 22)">
+            <rect width="56" height="22" fill="#fff" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 2"/>
+            <text x="28" y="12" class="label-serif" font-size="12" font-weight="700" font-style="italic" text-anchor="middle">M<tspan baseline-shift="sub" font-size="8">a</tspan></text>
+          </g>
+          <g transform="translate(170, 60)">
+            <rect width="56" height="24" fill="#fff" stroke="var(--ink)" stroke-width="1.6"/>
+            <text x="28" y="13" class="label-serif" font-size="12" font-weight="700" font-style="italic" text-anchor="middle">M<tspan baseline-shift="sub" font-size="8">b</tspan></text>
+          </g>
+          <g transform="translate(170, 98)">
+            <rect width="56" height="22" fill="#fff" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 2"/>
+            <text x="28" y="12" class="label-serif" font-size="12" font-weight="700" font-style="italic" text-anchor="middle">M<tspan baseline-shift="sub" font-size="8">c</tspan></text>
+          </g>
+
+          <!-- merge to output -->
+          <line x1="226" y1="80" x2="288" y2="80" stroke="var(--c-output)" stroke-width="1.6" marker-end="url(#arr-rt-out)" class="flow-fast"/>
+          <text x="304" y="76" class="label-mono" font-size="11" fill="var(--c-output)" text-anchor="middle">y</text>
+        </svg>
+        <div class="alg-eqn">$ M(x, \Omega) \;=\; M_{R(x,\,\Omega_R)}\!\bigl(\, x,\; \Omega_i \,\bigr) $</div>
+        <div class="alg-deriv"><span class="lab">routed sensitivity</span>∂y/∂x = ∂M<sub>i</sub>/∂x  +  ∂y/∂R</div>
+        <div class="alg-gloss">Adds a new sensitivity: <em>∂y/∂R</em>. An agent that <em>almost</em> called a different tool carries latent risk in R.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- PANEL 3 — TWO WORLDS, ONE ALGEBRA                         -->
+  <!-- ======================================================== -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Two Worlds, One Algebra <small>quantitative finance · generative AI</small></div>
+      <div class="panel-sub">Same axioms · same chain rule · different physics</div>
+    </div>
+
+    <div class="cases">
+
+      <!-- ============== CASE A: BLACK–SCHOLES ============== -->
+      <div class="case-card">
+        <div class="case-eyebrow">CASE A · A PRICING-AND-HEDGING PIPELINE</div>
+        <div class="case-name">The Black–Scholes Stack</div>
+        <div class="case-notation">M = M₃ ∘ M₂ ∘ M₁  ·  a static composition</div>
+        <div class="case-svg-wrap">
+          <svg viewBox="0 60 760 240" xmlns="http://www.w3.org/2000/svg" aria-label="Black-Scholes pipeline">
+
+            <defs>
+              <marker id="bs-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-input)"/>
+              </marker>
+              <marker id="bs-mid" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--ink)"/>
+              </marker>
+              <marker id="bs-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-output)"/>
+              </marker>
+              <marker id="bs-omega" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-data)"/>
+              </marker>
+              <marker id="bs-omega-compute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-compute)"/>
+              </marker>
+              <marker id="bs-omega-config" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-config)"/>
+              </marker>
+            </defs>
+
+            <!-- LHS: input bundle -->
+            <g transform="translate(18, 68)">
+              <rect width="124" height="120" fill="#fff" stroke="var(--c-input)" stroke-width="1.2"/>
+              <text x="62" y="14" class="lab-eyebrow" text-anchor="middle" fill="var(--c-input)">market state</text>
+              <line x1="0" y1="22" x2="124" y2="22" stroke="var(--c-input)" stroke-width="0.6" opacity="0.4"/>
+
+              <g font-family="JetBrains Mono" font-size="10.5" fill="#222">
+                <text x="9" y="40">S  = 142.30</text>
+                <text x="9" y="56">K  = 145.00</text>
+                <text x="9" y="72">r  = 0.0475</text>
+                <text x="9" y="88">τ  = 0.083 yr</text>
+                <text x="9" y="104">q  = 0.0140</text>
+              </g>
+              <text x="62" y="116" class="lab-eyebrow" text-anchor="middle" fill="var(--muted)">x ∈ ℝ⁵</text>
+            </g>
+
+            <!-- arrow input → M1 -->
+            <line x1="142" y1="128" x2="170" y2="128" stroke="var(--c-input)" stroke-width="1.6" marker-end="url(#bs-in)" class="flow-fast"/>
+
+            <!-- M1: vol surface -->
+            <g transform="translate(170, 84)">
+              <rect width="118" height="88" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+              <line x1="0" y1="20" x2="118" y2="20" stroke="var(--ink)" stroke-width="0.5"/>
+              <text x="6" y="14" class="label-mono" font-size="9" font-weight="700">M₁</text>
+              <text x="20" y="14" class="label-mono" font-size="9" fill="var(--c-version)" font-weight="700">v=14</text>
+              <text x="59" y="40" class="label-serif" font-size="14" font-weight="700" font-style="italic" text-anchor="middle">vol surface</text>
+              <text x="59" y="58" class="label-mono" font-size="10" text-anchor="middle">SVI calibration</text>
+              <text x="59" y="74" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">quotes → σ(K, τ)</text>
+            </g>
+
+            <!-- intermediate σ -->
+            <line x1="288" y1="128" x2="318" y2="128" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#bs-mid)" class="flow-fast"/>
+            <text x="303" y="120" class="label-mono" font-size="10" text-anchor="middle" fill="var(--ink)" font-weight="600">σ̂</text>
+
+            <!-- M2: Black-Scholes -->
+            <g transform="translate(318, 84)">
+              <rect width="118" height="88" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+              <line x1="0" y1="20" x2="118" y2="20" stroke="var(--ink)" stroke-width="0.5"/>
+              <text x="6" y="14" class="label-mono" font-size="9" font-weight="700">M₂</text>
+              <text x="20" y="14" class="label-mono" font-size="9" fill="var(--c-version)" font-weight="700">v=2</text>
+              <text x="59" y="38" class="label-serif" font-size="14" font-weight="700" font-style="italic" text-anchor="middle">Black–Scholes</text>
+              <text x="59" y="56" class="label-mono" font-size="9.5" text-anchor="middle">Cₜ + ½σ²S²Cₛₛ</text>
+              <text x="59" y="69" class="label-mono" font-size="9.5" text-anchor="middle">+ rSCₛ − rC = 0</text>
+              <text x="59" y="82" class="label-mono" font-size="8" fill="var(--muted)" text-anchor="middle">closed-form pricer</text>
+            </g>
+
+            <!-- intermediate price -->
+            <line x1="436" y1="128" x2="466" y2="128" stroke="var(--ink)" stroke-width="1.6" marker-end="url(#bs-mid)" class="flow-fast"/>
+            <text x="451" y="120" class="label-mono" font-size="10" text-anchor="middle">C, Δ</text>
+
+            <!-- M3: hedger -->
+            <g transform="translate(466, 84)">
+              <rect width="118" height="88" fill="#fff" stroke="var(--ink)" stroke-width="1.4"/>
+              <line x1="0" y1="20" x2="118" y2="20" stroke="var(--ink)" stroke-width="0.5"/>
+              <text x="6" y="14" class="label-mono" font-size="9" font-weight="700">M₃</text>
+              <text x="20" y="14" class="label-mono" font-size="9" fill="var(--c-version)" font-weight="700">v=8</text>
+              <text x="59" y="40" class="label-serif" font-size="14" font-weight="700" font-style="italic" text-anchor="middle">delta hedger</text>
+              <text x="59" y="58" class="label-mono" font-size="10" text-anchor="middle">size = −Δ · N</text>
+              <text x="59" y="74" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">execution policy</text>
+            </g>
+
+            <!-- output arrow → directly into ticket -->
+            <line x1="584" y1="128" x2="610" y2="128" stroke="var(--c-output)" stroke-width="1.6" marker-end="url(#bs-out)" class="flow-fast"/>
+
+            <!-- output bundle (inline with pipeline) -->
+            <g transform="translate(614, 84)">
+              <rect width="132" height="88" fill="#fff" stroke="var(--c-output)" stroke-width="1.2"/>
+              <text x="6" y="14" class="lab-eyebrow" fill="var(--c-output)">y · order ticket</text>
+              <line x1="0" y1="20" x2="132" y2="20" stroke="var(--c-output)" stroke-width="0.5" opacity="0.5"/>
+              <g font-family="JetBrains Mono" font-size="10.5" fill="#222">
+                <text x="9" y="38">price = 4.27</text>
+                <text x="9" y="55">Δ     = 0.412</text>
+                <text x="9" y="72">size  = −412 sh</text>
+              </g>
+            </g>
+
+            <!-- Ω inputs (below the pipeline) -->
+            <g transform="translate(20, 200)">
+              <text x="0" y="6" class="lab-eyebrow">Environment Ω</text>
+              <!-- Ω_data feed -->
+              <g transform="translate(0, 12)">
+                <rect width="178" height="22" fill="#fff" stroke="var(--c-data)" stroke-width="1"/>
+                <text x="6" y="15" class="label-mono" font-size="9" fill="var(--c-data)" font-weight="700">Ω_data</text>
+                <text x="172" y="15" class="label-mono" font-size="9" fill="#444" text-anchor="end">Bloomberg vol cube</text>
+              </g>
+              <g transform="translate(0, 38)">
+                <rect width="178" height="22" fill="#fff" stroke="var(--c-compute)" stroke-width="1"/>
+                <text x="6" y="15" class="label-mono" font-size="9" fill="var(--c-compute)" font-weight="700">Ω_compute</text>
+                <text x="172" y="15" class="label-mono" font-size="9" fill="#444" text-anchor="end">x86 · IEEE-754</text>
+              </g>
+              <g transform="translate(0, 64)">
+                <rect width="178" height="22" fill="#fff" stroke="var(--c-config)" stroke-width="1"/>
+                <text x="6" y="15" class="label-mono" font-size="9" fill="var(--c-config)" font-weight="700">Ω_config</text>
+                <text x="172" y="15" class="label-mono" font-size="9" fill="#444" text-anchor="end">smile prior · q-curve</text>
+              </g>
+
+              <!-- arrows feeding from the RIGHT SIDE of each Ω box UP into the pipeline boxes -->
+              <!-- start: right edge of Ω rect (x=178, mid-height); end: pipeline box bottoms in Ω frame -->
+              <path d="M 178,23 C 200,23 209,-10 209,-28" fill="none" stroke="var(--c-data)" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#bs-omega)" class="flow-slow"/>
+              <path d="M 178,49 C 260,49 357,5 357,-28" fill="none" stroke="var(--c-compute)" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#bs-omega-compute)" class="flow-slow"/>
+              <path d="M 178,75 C 320,75 505,30 505,-28" fill="none" stroke="var(--c-config)" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#bs-omega-config)" class="flow-slow"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="case-eqn">$ M \,:\, \mathbb{R}^{5} \times \Omega \;\longrightarrow\; \mathbb{R}^{3} $</div>
+        <div class="case-deriv"><span class="lab">end-to-end sensitivity by the chain rule</span>∂(size)/∂(quotes)  =  (∂M₃/∂Δ) · (∂M₂/∂σ̂) · (∂M₁/∂quotes)</div>
+        <div class="case-gloss">deterministic · closed-form · fully versioned</div>
+
+        <div class="case-foot">
+          <div class="factoid">
+            <div class="lab">Inputs</div>
+            <div class="body"><span class="num">5</span>typed scalars (S, K, r, τ, q)</div>
+          </div>
+          <div class="factoid">
+            <div class="lab">Outputs</div>
+            <div class="body"><span class="num">3</span>price, Δ, order size</div>
+          </div>
+          <div class="factoid">
+            <div class="lab">Composed Versions</div>
+            <div class="body"><span class="num">v₁=14 · v₂=2 · v₃=8</span> <em>any change bumps the pipeline</em></div>
+          </div>
+          <div class="factoid">
+            <div class="lab">Risk Driver</div>
+            <div class="body"><span class="num">σ̂</span><em>vol drift dominates ∂y/∂Ω</em></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============== CASE B: LLM AGENT ============== -->
+      <div class="case-card">
+        <div class="case-eyebrow">CASE B · A TOOL-USING GENERATIVE AGENT</div>
+        <div class="case-name">The LLM Orchestrator</div>
+        <div class="case-notation">M = M<sub>synth</sub> ∘ ⊕<sub>i</sub> M<sub>i</sub> ∘ R  ·  dynamic routing</div>
+        <div class="case-svg-wrap">
+          <svg viewBox="0 10 760 310" xmlns="http://www.w3.org/2000/svg" aria-label="LLM agent dynamic routing">
+
+            <defs>
+              <marker id="ag-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-input)"/>
+              </marker>
+              <marker id="ag-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-output)"/>
+              </marker>
+              <marker id="ag-route" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--c-router)"/>
+              </marker>
+              <marker id="ag-loop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+
+            <!-- LHS: prompt -->
+            <g transform="translate(18, 80)">
+              <rect width="118" height="92" fill="#fff" stroke="var(--c-input)" stroke-width="1.2"/>
+              <text x="59" y="14" class="lab-eyebrow" text-anchor="middle" fill="var(--c-input)">x · prompt</text>
+              <line x1="0" y1="22" x2="118" y2="22" stroke="var(--c-input)" stroke-width="0.6" opacity="0.4"/>
+              <text x="9" y="38" class="label-serif" font-size="10.5" font-style="italic">"Compute the</text>
+              <text x="9" y="52" class="label-serif" font-size="10.5" font-style="italic">10-day VaR for</text>
+              <text x="9" y="66" class="label-serif" font-size="10.5" font-style="italic">portfolio P₇.</text>
+              <text x="9" y="80" class="label-serif" font-size="10.5" font-style="italic">Cite sources."</text>
+            </g>
+
+            <!-- arrow into router -->
+            <line x1="136" y1="126" x2="186" y2="126" stroke="var(--c-input)" stroke-width="1.6" marker-end="url(#ag-in)" class="flow-fast"/>
+
+            <!-- Router (the LLM itself) -->
+            <g transform="translate(186, 86)">
+              <polygon points="40,0 80,40 40,80 0,40" fill="#fff" stroke="var(--c-router)" stroke-width="1.8"/>
+              <text x="40" y="38" class="label-serif" font-size="18" font-style="italic" font-weight="700" text-anchor="middle" fill="var(--c-router)">R</text>
+              <text x="40" y="55" class="label-mono" font-size="9" fill="var(--c-router)" text-anchor="middle">LLM</text>
+              <text x="40" y="-8" class="lab-eyebrow" text-anchor="middle" fill="var(--c-router)">router · planner</text>
+              <text x="40" y="100" class="label-mono" font-size="9" fill="var(--c-version)" text-anchor="middle" font-weight="700">v=11.4</text>
+            </g>
+
+            <!-- branch fan-out to four tools, with probability stamps -->
+            <!-- M_search -->
+            <path d="M 266,108 C 320,108 320,38 372,38" fill="none" stroke="var(--c-router)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ag-route)"/>
+            <text x="368" y="30" class="label-mono" font-size="8.5" fill="var(--c-router)" text-anchor="end">p=0.18</text>
+            <g transform="translate(372, 18)">
+              <rect width="120" height="40" fill="#fff" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 2"/>
+              <text x="60" y="18" class="label-serif" font-size="13" font-style="italic" font-weight="700" text-anchor="middle" fill="var(--muted)">M<tspan baseline-shift="sub" font-size="9">search</tspan></text>
+              <text x="60" y="32" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">web · ∂y/∂Ω_data</text>
+            </g>
+
+            <!-- M_retrieve -->
+            <path d="M 266,126 L 372,84" fill="none" stroke="var(--c-router)" stroke-width="2.2" marker-end="url(#ag-route)"/>
+            <text x="368" y="74" class="label-mono" font-size="9.5" fill="var(--c-router)" font-weight="600" text-anchor="end">p=0.79</text>
+            <g transform="translate(372, 64)">
+              <rect width="120" height="40" fill="#fff" stroke="var(--ink)" stroke-width="1.6"/>
+              <text x="60" y="18" class="label-serif" font-size="13" font-style="italic" font-weight="700" text-anchor="middle">M<tspan baseline-shift="sub" font-size="9">retrieve</tspan></text>
+              <text x="60" y="32" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">RAG · embed v=4</text>
+            </g>
+
+            <!-- M_calc -->
+            <path d="M 266,144 L 372,128" fill="none" stroke="var(--c-router)" stroke-width="2.2" marker-end="url(#ag-route)"/>
+            <text x="368" y="120" class="label-mono" font-size="9.5" fill="var(--c-router)" font-weight="600" text-anchor="end">p=0.86</text>
+            <g transform="translate(372, 110)">
+              <rect width="120" height="40" fill="#fff" stroke="var(--ink)" stroke-width="1.6"/>
+              <text x="60" y="18" class="label-serif" font-size="13" font-style="italic" font-weight="700" text-anchor="middle">M<tspan baseline-shift="sub" font-size="9">calc</tspan></text>
+              <text x="60" y="32" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">var(P) · numpy</text>
+            </g>
+
+            <!-- M_writer -->
+            <path d="M 266,162 C 320,162 320,176 372,176" fill="none" stroke="var(--c-router)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ag-route)"/>
+            <text x="368" y="168" class="label-mono" font-size="8.5" fill="var(--c-router)" text-anchor="end">p=0.21</text>
+            <g transform="translate(372, 156)">
+              <rect width="120" height="40" fill="#fff" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 2"/>
+              <text x="60" y="18" class="label-serif" font-size="13" font-style="italic" font-weight="700" text-anchor="middle" fill="var(--muted)">M<tspan baseline-shift="sub" font-size="9">writer</tspan></text>
+              <text x="60" y="32" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">cite + format</text>
+            </g>
+
+            <!-- merge node -->
+            <circle cx="528" cy="108" r="4.5" fill="var(--c-router)" stroke="none"/>
+            <path d="M 492,38 C 514,38 528,80 528,104" fill="none" stroke="var(--c-router)" stroke-width="1.0" stroke-dasharray="2 3"/>
+            <path d="M 492,84 L 528,104" fill="none" stroke="var(--c-router)" stroke-width="1.4"/>
+            <path d="M 492,130 L 528,112" fill="none" stroke="var(--c-router)" stroke-width="1.4"/>
+            <path d="M 492,176 C 514,176 528,140 528,114" fill="none" stroke="var(--c-router)" stroke-width="1.0" stroke-dasharray="2 3"/>
+
+            <!-- back to router for re-planning loop -->
+            <path d="M 528,108 C 528,210 296,236 226,170"
+                  fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3"
+                  marker-end="url(#ag-loop)"/>
+            <text x="380" y="226" class="label-mono" font-size="9" fill="var(--accent)" text-anchor="middle">re-plan · fixed-point: M = F(M)</text>
+
+            <!-- output -->
+            <line x1="532" y1="108" x2="596" y2="108" stroke="var(--c-output)" stroke-width="1.6" marker-end="url(#ag-out)" class="flow-fast"/>
+
+            <!-- output card -->
+            <g transform="translate(600, 80)">
+              <rect width="142" height="88" fill="#fff" stroke="var(--c-output)" stroke-width="1.2"/>
+              <text x="6" y="14" class="lab-eyebrow" fill="var(--c-output)">y · answer</text>
+              <line x1="0" y1="20" x2="142" y2="20" stroke="var(--c-output)" stroke-width="0.5" opacity="0.5"/>
+              <text x="71" y="44" class="label-serif" font-size="18" font-weight="700" text-anchor="middle">VaR = 2.1%</text>
+              <text x="71" y="62" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">10-day · 95% CI</text>
+              <text x="71" y="76" class="label-mono" font-size="9" fill="var(--muted)" text-anchor="middle">[3 citations]</text>
+            </g>
+
+            <!-- Ω band beneath -->
+            <g transform="translate(20, 232)">
+              <text x="0" y="-2" class="lab-eyebrow">Environment Ω · the dominant risk surface</text>
+
+              <g transform="translate(0, 4)">
+                <rect width="722" height="22" fill="#fff" stroke="var(--c-config)" stroke-width="1"/>
+                <text x="9" y="15" class="label-mono" font-size="9.5" fill="var(--c-config)" font-weight="700">Ω_config</text>
+                <text x="86" y="15" class="label-mono" font-size="9.5" fill="#444">temperature = 0.3 · top_p = 0.95 · system prompt v=22 · max_tokens = 4096 · seed = unset</text>
+              </g>
+              <g transform="translate(0, 30)">
+                <rect width="722" height="22" fill="#fff" stroke="var(--c-data)" stroke-width="1"/>
+                <text x="9" y="15" class="label-mono" font-size="9.5" fill="var(--c-data)" font-weight="700">Ω_data</text>
+                <text x="86" y="15" class="label-mono" font-size="9.5" fill="#444">retrieval index ix-2026-04-30 · web search live · portfolio table P₇ snapshot 09:42:00 UTC</text>
+              </g>
+              <g transform="translate(0, 56)">
+                <rect width="722" height="22" fill="#fff" stroke="var(--c-compute)" stroke-width="1"/>
+                <text x="9" y="15" class="label-mono" font-size="9.5" fill="var(--c-compute)" font-weight="700">Ω_compute</text>
+                <text x="106" y="15" class="label-mono" font-size="9.5" fill="#444">vendor-managed · provider can ship a silent change without your version index incrementing</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <div class="case-eqn">$ M \,:\, \text{Prompt} \times \Omega \;\longrightarrow\; \text{Answer} $</div>
+        <div class="case-deriv"><span class="lab">total sensitivity</span>∂y/∂x  =  ∂y/∂path  +  ∂y/∂R</div>
+        <div class="case-gloss">stochastic · branching · partly vendor-controlled — a tool that <em>almost</em> got called is latent risk in R</div>
+
+        <div class="case-foot">
+          <div class="factoid">
+            <div class="lab">Branching factor</div>
+            <div class="body"><span class="num">4</span>tools · 2 selected on this trace</div>
+          </div>
+          <div class="factoid">
+            <div class="lab">Outputs</div>
+            <div class="body"><span class="num">~∞</span>open-domain text · stochastic</div>
+          </div>
+          <div class="factoid">
+            <div class="lab">Hidden Operator</div>
+            <div class="body"><span class="num">R</span><em>the router is itself a model</em></div>
+          </div>
+          <div class="factoid">
+            <div class="lab">Risk Driver</div>
+            <div class="body"><span class="num">∂R</span><em>routing instability · ∂y/∂Ω</em></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- NOTES                                                     -->
+  <!-- ======================================================== -->
+  <div class="notes">
+    <p><strong>The atom.</strong> Forget for a moment what a model is made of and consider what it <em>does</em>. It takes an input <code>x</code>, runs in some environment <code>Ω</code>, and returns an output <code>y</code>. Pin the version <code>v</code> and that triple is a contract: the same <code>(M^v, x, Ω)</code> always produces the same <code>y</code>. That is reproducibility, written down. The Black–Scholes pricer and a 70-billion-parameter language model live in the same definition.</p>
+
+    <p><strong>The algebra.</strong> Five axioms — immutability, typing, closure, identity, associativity — are the precise rules under which two operators wire together without ambiguity. From them, four operations: <em>composition</em> chains them in series; <em>parallel product</em> runs them on the same input; <em>versioning</em> moves them through time; <em>dynamic routing</em> lets one model decide which other model runs. Closure guarantees the result is again a model, so the rules apply at every level.</p>
+
+    <p><strong>The chain rule.</strong> Because models compose, sensitivities propagate. A change in a market feed deep inside <code>M₁</code> moves the order ticket out of <code>M₃</code> by the product of the local Jacobians. Where the components are smooth, this is calculus. Where they are discrete or stochastic, Lipschitz bounds replace differentiation — the structure is the same. <em>Risk does not stop at a module boundary.</em> It travels.</p>
+
+    <p><strong>The point.</strong> A static pipeline and an agentic LLM look different until you draw them as typed operators. Then they are the same picture with different shapes in the boxes. The Black–Scholes stack has scalar inputs and a closed form; the agent has natural-language prompts and a router that makes the routing decision <em>itself</em> measurable. Either way: governance is bookkeeping on the triple <code>(M^v, x, Ω)</code>. Everything else is commentary.</p>
+  </div>
+
+  <div class="byline">
+    <div>An Illustration · Cowork Studio</div>
+    <div>After Goble, <em>The Model Operator</em> (April 2026) · v.19</div>
+  </div>
+
+</div>
+</body>
+</html>

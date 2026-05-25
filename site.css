@@ -1,0 +1,438 @@
+/* ============================================================
+   site.css — Nicholas Goble · Idea Lab
+   Palette extracted from the trust integral explorer (iris+emerald).
+   Sky is the bridge color. Each lecture gets one accent.
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --bg:        #fafaf6;
+  --panel:     #ffffff;
+  --panel-2:   #f5f5f0;
+  --ink:       #18181b;
+  --ink-soft:  #3f3f46;
+  --muted:     #6b7280;
+  --border:    #e5e7eb;
+  --border-2:  #d4d4d8;
+
+  /* Topic accents (used per-card via [data-accent]) */
+  --sky:        #38bdf8;
+  --sky-text:   #0369a1;
+  --sky-soft:   rgba(56, 189, 248, 0.10);
+
+  --indigo:        #6366f1;
+  --indigo-text:   #3730a3;
+  --indigo-soft:   rgba(99, 102, 241, 0.10);
+
+  --saffron:        #fbbf24;
+  --saffron-text:   #92400e;
+  --saffron-soft:   rgba(251, 191, 36, 0.12);
+
+  --emerald:        #1f8d20;
+  --emerald-text:   #065f46;
+  --emerald-soft:   rgba(31, 141, 32, 0.10);
+
+  --pink:           #f472b6;
+  --pink-text:      #9d174d;
+
+  /* Type */
+  --serif: 'Charter', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+  --mono:  ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+a.inline { color: var(--ink); border-bottom: 1px solid var(--border-2); }
+a.inline:hover { border-bottom-color: var(--ink); }
+
+::selection { background: var(--saffron); color: var(--ink); }
+
+/* ============================================================
+   Layout
+   ============================================================ */
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 36px 32px 96px;
+}
+
+.wrap-narrow {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 28px 96px;
+}
+
+/* ============================================================
+   Site header (small, present on every page)
+   ============================================================ */
+
+.site-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.site-header .brand {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.site-header .brand a:hover { color: var(--indigo-text); }
+.site-header nav {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  gap: 18px;
+}
+.site-header nav a:hover { color: var(--ink); }
+
+/* ============================================================
+   Hero (homepage only)
+   ============================================================ */
+
+.hero {
+  padding: 48px 0 56px;
+  max-width: 760px;
+}
+.hero .kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+.hero .tagline {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  max-width: 580px;
+  margin: 0 0 8px;
+}
+.hero .sub {
+  color: var(--muted);
+  font-size: 14.5px;
+  max-width: 600px;
+  margin: 14px 0 0;
+}
+
+/* ============================================================
+   Card grid (homepage)
+   ============================================================ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  .grid { grid-template-columns: 1fr; gap: 18px; }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--card-accent, var(--ink));
+  opacity: 0.75;
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: var(--card-accent, var(--ink));
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+}
+.card:hover::before { opacity: 1; }
+
+.card .preview {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--card-accent-soft, var(--panel-2));
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.card .preview iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 200%;
+  transform: scale(0.5);
+  transform-origin: top left;
+  border: 0;
+  pointer-events: none;
+  background: var(--panel);
+}
+.card .preview .veil {
+  /* Sits above the iframe to mute its busyness and ensure click goes to <a>. */
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(250, 250, 246, 0.0) 0%,
+    rgba(250, 250, 246, 0.0) 55%,
+    rgba(250, 250, 246, 0.55) 100%);
+  pointer-events: none;
+}
+
+.card .body {
+  padding: 18px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.card .meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--card-accent, var(--muted));
+  font-weight: 600;
+}
+.card h2 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--ink);
+}
+.card .sub {
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+/* Per-card accent colors */
+.card[data-accent="sky"]     { --card-accent: var(--sky-text);     --card-accent-soft: var(--sky-soft); }
+.card[data-accent="indigo"]  { --card-accent: var(--indigo-text);  --card-accent-soft: var(--indigo-soft); }
+.card[data-accent="saffron"] { --card-accent: var(--saffron-text); --card-accent-soft: var(--saffron-soft); }
+.card[data-accent="emerald"] { --card-accent: var(--emerald-text); --card-accent-soft: var(--emerald-soft); }
+
+/* ============================================================
+   Lecture page
+   ============================================================ */
+
+.lecture-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent, var(--muted));
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.lecture-title {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+
+.lecture-lead {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 28px;
+  max-width: 680px;
+}
+
+/* Full-bleed embed for the lecture's headline interactive. */
+.lecture-embed {
+  margin: 32px 0 40px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  /* Pull slightly beyond the narrow column for visual punch. */
+  margin-left: -40px;
+  margin-right: -40px;
+}
+@media (max-width: 820px) {
+  .lecture-embed { margin-left: 0; margin-right: 0; }
+}
+.lecture-embed iframe {
+  display: block;
+  width: 100%;
+  height: 640px;
+  border: 0;
+  background: var(--panel);
+}
+.lecture-embed .caption {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lecture-embed .caption a:hover { color: var(--ink); }
+
+/* Prose body */
+.prose { max-width: 680px; }
+.prose h2 {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 48px 0 12px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.prose h2::before {
+  content: '§ ';
+  color: var(--accent, var(--muted));
+  font-family: var(--mono);
+  font-size: 0.7em;
+  font-weight: 400;
+  vertical-align: 0.15em;
+  margin-right: 4px;
+}
+.prose h3 {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 28px 0 8px;
+  color: var(--ink);
+}
+.prose p { margin: 0 0 16px; font-size: 16.5px; line-height: 1.65; color: var(--ink-soft); }
+.prose p.draft {
+  color: var(--muted);
+  font-style: italic;
+  border-left: 2px solid var(--border-2);
+  padding-left: 14px;
+}
+.prose ul, .prose ol { padding-left: 22px; margin: 0 0 16px; color: var(--ink-soft); }
+.prose li { margin-bottom: 6px; line-height: 1.6; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  background: var(--panel-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.prose blockquote {
+  margin: 18px 0;
+  padding: 4px 18px;
+  border-left: 3px solid var(--accent, var(--border-2));
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-style: italic;
+}
+
+/* Accent assignment per lecture (set on <body data-accent>) */
+body[data-accent="sky"]     { --accent: var(--sky-text); }
+body[data-accent="indigo"]  { --accent: var(--indigo-text); }
+body[data-accent="saffron"] { --accent: var(--saffron-text); }
+body[data-accent="emerald"] { --accent: var(--emerald-text); }
+
+/* Prev / next nav at end of a lecture */
+.lecture-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.lecture-nav a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+.lecture-nav a:hover { border-color: var(--ink); transform: translateY(-2px); }
+.lecture-nav a.next { text-align: right; }
+.lecture-nav .dir {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lecture-nav .label {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.lecture-nav a.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+
+.site-footer {
+  margin-top: 72px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}

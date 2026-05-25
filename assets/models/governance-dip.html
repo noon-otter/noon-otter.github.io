@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Governance Dip — Why MRM Hurts Before It Pays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f7f3ea;
+    --paper: #ffffff;
+    --paper-warm: #fdfcf8;
+    --ink: #1a1a1a;
+    --ink-soft: #3a3a3a;
+    --muted: #6b6b6b;
+    --rule: #d9d3c4;
+    --rule-strong: #b9b1a0;
+
+    --accent: #a6172d;
+    --accent-soft: rgba(166, 23, 45, 0.18);
+    --accent-wash: rgba(166, 23, 45, 0.07);
+    --accent-deep: #7a1020;
+
+    --reward: #4f6a2c;
+    --reward-soft: rgba(79, 106, 44, 0.20);
+    --reward-wash: rgba(79, 106, 44, 0.09);
+    --reward-deep: #324a18;
+
+    --neutral: #6b6b6b;
+
+    --serif: "Playfair Display", "Times New Roman", Georgia, serif;
+    --sans:  "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+    --mono:  "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 20px 20px 36px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(22px, 2.6vw, 32px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .dek {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(14px, 1.3vw, 16px);
+    color: #3a3a3a;
+    max-width: 920px;
+    margin: 0 0 16px;
+    line-height: 1.4;
+  }
+
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 12px 14px 14px;
+    margin-bottom: 14px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    gap: 12px;
+  }
+  .panel-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1.1;
+  }
+  .panel-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    /* Extra height beyond the chart's drawing area (which ends at viewBox
+       y=720) so the x-axis labels at y=695 / y=714 always have breathing
+       room and never clip against the canvas-wrap edge. */
+    aspect-ratio: 1280 / 760;
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+  .canvas-wrap svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ----- SVG element styling ----- */
+
+  .grid-line { stroke: var(--rule); stroke-width: 0.6; }
+  .grid-tick { fill: var(--muted); font: 600 11px var(--sans); letter-spacing: 0.04em; }
+
+  .axis-line { stroke: var(--ink); stroke-width: 1; }
+  .axis-arrow { fill: var(--ink); }
+
+  .axis-label {
+    font: 700 13px var(--sans);
+    fill: var(--ink);
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+  }
+  .axis-sub {
+    font: italic 14px var(--serif);
+    fill: var(--muted);
+  }
+
+  .zero-line { stroke: var(--rule-strong); stroke-width: 1; stroke-dasharray: 3 5; }
+  .zero-tag {
+    font: 700 10px var(--sans);
+    fill: var(--muted);
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+  }
+
+  .pain-band-label, .reward-band-label {
+    font: 900 28px var(--serif);
+    letter-spacing: 0.06em;
+    opacity: 0.13;
+  }
+  .pain-band-label { fill: var(--accent); }
+  .reward-band-label { fill: var(--reward); }
+
+  /* The dip path — base "ahead" stroke is muted; trail is accent that grows */
+  .curve-base {
+    fill: none;
+    stroke: var(--rule-strong);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .curve-trail {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* dasharray is set live in JS to reveal travelled portion */
+  }
+
+  /* Station: marker + connector + label
+     Each starts dim (gray) and lights up (accent or reward) as the traveler passes. */
+  .station {
+    transition: opacity 0.4s ease;
+  }
+  .station .st-connector {
+    /* Darker than the page rule so the connector survives on both the red
+       pain wash AND the green reward wash — neither background should let
+       the connector disappear. */
+    stroke: var(--ink-soft);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+    stroke-opacity: 0.45;
+    fill: none;
+    transition: stroke 0.4s ease, stroke-width 0.3s ease, stroke-opacity 0.4s ease;
+  }
+  .station.lit.pain .st-connector,
+  .station.lit.reward .st-connector { stroke-opacity: 1; }
+  .station .st-marker {
+    fill: var(--paper-warm);
+    stroke: var(--rule-strong);
+    stroke-width: 1.3;
+    transition: fill 0.4s ease, stroke 0.4s ease, r 0.3s ease;
+  }
+  .station .st-label-bg {
+    fill: var(--paper-warm);
+    fill-opacity: 0.92;
+    stroke: none;
+  }
+  /* Paint-order trick: stroke a paper-colored halo first so the curve
+     visibly passes BEHIND each label letter. This means we don't have to
+     fight the path geometry for every reward label — text always wins. */
+  .station .st-label-num {
+    font: 700 10px var(--mono);
+    fill: var(--muted);
+    letter-spacing: 0.04em;
+    paint-order: stroke fill;
+    stroke: var(--paper-warm);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    transition: fill 0.4s ease;
+  }
+  .station .st-label-text {
+    font: 600 12.5px var(--sans);
+    fill: var(--ink-soft);
+    letter-spacing: 0;
+    paint-order: stroke fill;
+    stroke: var(--paper-warm);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+    transition: fill 0.4s ease;
+  }
+
+  /* Lit states — pain side */
+  .station.lit.pain .st-connector { stroke: var(--accent); stroke-width: 1; }
+  .station.lit.pain .st-marker     { fill: var(--accent); stroke: var(--accent-deep); }
+  .station.lit.pain .st-label-num  { fill: var(--accent); }
+  .station.lit.pain .st-label-text { fill: var(--ink); font-weight: 700; }
+
+  /* Lit states — reward side */
+  .station.lit.reward .st-connector { stroke: var(--reward); stroke-width: 1; }
+  .station.lit.reward .st-marker     { fill: var(--reward); stroke: var(--reward-deep); }
+  .station.lit.reward .st-label-num  { fill: var(--reward); }
+  .station.lit.reward .st-label-text { fill: var(--ink); font-weight: 700; }
+
+  /* Featured station — the bottom of the dip */
+  .station.featured .st-marker {
+    stroke-width: 1.6;
+  }
+  .station.featured .st-label-text {
+    font-style: italic;
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .station.featured.lit .st-label-text { fill: var(--accent); }
+  .station.featured .pulse-ring {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.4;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: pulseRing 2.2s ease-out infinite;
+  }
+  .station.featured.passed .pulse-ring { animation: none; opacity: 0; }
+  @keyframes pulseRing {
+    0%   { r: 6;  opacity: 0.0; }
+    25%  { opacity: 0.6; }
+    100% { r: 22; opacity: 0; }
+  }
+
+  /* Endpoint marker on the right (the "excellent" terminus) */
+  .terminus {
+    fill: var(--reward);
+    stroke: var(--reward-deep);
+    stroke-width: 1.4;
+    transition: opacity 0.5s ease;
+  }
+  .terminus-glow {
+    fill: var(--reward);
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  .terminus.lit { animation: termPulse 3s ease-in-out infinite; }
+  @keyframes termPulse {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(79, 106, 44, 0.0)); }
+    50%      { filter: drop-shadow(0 0 6px rgba(79, 106, 44, 0.55)); }
+  }
+  .reward-glow.lit { opacity: 0.55; }
+
+  /* When the loop resets, fade the trail and traveler out, snap progress
+     back to start under the cover of the fade, then fade them back in.
+     No backwards motion is shown to the viewer. */
+  .curve-trail, .traveler { transition: opacity 0.55s ease-out; }
+  .curve-trail.looping-out, .traveler.looping-out { opacity: 0; }
+
+  /* In-plot phase title card — sits in the upper-middle band between the top
+     of the reward wash and the level where any annotation could land. The
+     card is positioned defensively in a y/x corridor that is empty for every
+     station label, watermark, and curve waypoint. Title color tracks the
+     current zone (pain / reward / neutral). */
+  .pt-bg {
+    fill: var(--paper);
+    stroke: var(--rule-strong);
+    stroke-width: 1;
+  }
+  .pt-eyebrow {
+    font: 700 9px var(--sans);
+    fill: var(--muted);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+  .pt-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 19px;
+    fill: var(--ink);
+    transition: fill 0.4s ease;
+  }
+  .pt-title.pain   { fill: var(--accent); }
+  .pt-title.reward { fill: var(--reward); }
+  .pt-detail {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 11px;
+    fill: var(--muted);
+  }
+
+  /* The travelling figure */
+  .traveler {
+    pointer-events: none;
+  }
+  .traveler-halo {
+    fill: var(--accent);
+    opacity: 0.18;
+  }
+  .traveler-disc {
+    fill: var(--ink);
+    stroke: var(--paper-warm);
+    stroke-width: 2;
+  }
+  .traveler-tail {
+    fill: var(--accent);
+    opacity: 0.45;
+  }
+
+  /* Status strip — lives below the chart as a horizontal panel. Decoupled
+     from the SVG so it can never overlap an annotation: SVG scaling can
+     squeeze the chart, but this strip remains at consistent CSS sizing in
+     its own row of the panel. */
+  .status-strip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 16px 12px;
+    border-top: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--sans);
+  }
+  .status-strip .status-eyebrow {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.20em;
+    color: var(--muted);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .status-strip .status-zone {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+    transition: color 0.35s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .status-strip .status-zone.pain { color: var(--accent); }
+  .status-strip .status-zone.reward { color: var(--reward); }
+  .status-strip .status-divider {
+    color: var(--rule-strong);
+    flex-shrink: 0;
+  }
+  .status-strip .status-detail {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: #2a2a2a;
+    line-height: 1.35;
+    flex: 1;
+    min-width: 0;
+  }
+  .status-strip .status-meter {
+    position: relative;
+    width: 90px;
+    height: 4px;
+    background: var(--rule);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .status-strip .status-meter .fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--ink);
+    transition: width 0.15s linear, background 0.3s ease;
+    width: 0%;
+  }
+  .status-strip .status-meter.pain .fill { background: var(--accent); }
+  .status-strip .status-meter.reward .fill { background: var(--reward); }
+  @media (max-width: 720px) {
+    .status-strip { flex-wrap: wrap; }
+    .status-strip .status-detail { flex-basis: 100%; }
+  }
+
+  /* Caption in lower-left of canvas, like the original */
+  .canvas-caption {
+    position: absolute;
+    bottom: 14px;
+    left: 16px;
+    font: 600 10px var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    background: rgba(253, 252, 248, 0.85);
+    padding: 4px 8px;
+    max-width: 70%;
+  }
+
+  /* ----- Controls ----- */
+
+  .controls {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px 22px;
+    margin-bottom: 0;
+  }
+  .control { display: flex; flex-direction: column; gap: 6px; }
+  .control-label {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .control-value {
+    font-family: var(--serif);
+    font-size: 16px;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--rule-strong);
+    outline: none;
+    margin: 6px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 0;
+  }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 9px 14px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  button.secondary {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  button:hover { opacity: 0.82; }
+
+  /* ----- Stage tracker ----- */
+
+  .stage-tracker {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-top: 0;
+    padding: 10px 16px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 11px;
+  }
+  .stage-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-warm);
+    font-family: var(--sans);
+    color: var(--muted);
+    transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+    opacity: 0.55;
+  }
+  .stage-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--rule-strong);
+    transition: background 0.2s;
+  }
+  .stage-pill.active {
+    background: var(--paper);
+    color: var(--ink);
+    border-color: var(--ink);
+    opacity: 1;
+  }
+  .stage-pill.active .dot { background: var(--ink); }
+  .stage-pill.pain.active {
+    background: #fdf2f3;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .stage-pill.pain.active .dot { background: var(--accent); }
+  .stage-pill.featured.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-deep);
+  }
+  .stage-pill.featured.active .dot { background: #fff; }
+  .stage-pill.reward.active {
+    background: #f1f4ea;
+    color: var(--reward);
+    border-color: var(--reward);
+  }
+  .stage-pill.reward.active .dot { background: var(--reward); }
+  .stage-pill .yr {
+    font-family: var(--mono);
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  /* ----- Notes ----- */
+
+  .notes {
+    border-top: 2px solid var(--ink);
+    padding-top: 18px;
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2a2a2a;
+    column-count: 2;
+    column-gap: 36px;
+    column-rule: 1px solid var(--rule);
+  }
+  @media (max-width: 760px) { .notes { column-count: 1; } }
+  .notes p { margin: 0 0 12px; }
+  .notes strong {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    display: inline-block;
+    margin-right: 4px;
+  }
+  .notes em { color: var(--accent); font-style: italic; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: #f0ebde;
+    padding: 1px 5px;
+  }
+
+  .byline {
+    font-family: var(--sans);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="eyebrow">An Illustrated Explainer · Model Risk Management</div>
+  <h1>The <em>Governance Dip</em> — Why MRM Gets Worse Before It Gets <em>Much Better</em></h1>
+  <p class="dek">Every governance build-out feels like punishment for trying to do the right thing. The pain is real — but it is a valley, not a cliff. On the other side, the same controls that hurt are what make velocity compound.</p>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">A Single Path Across the Dip</div>
+      <div class="panel-sub">From neutral · through pain · into reward</div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <svg id="dipSvg" viewBox="0 0 1280 760" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="painWashGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="rgba(166,23,45,0.04)"/>
+            <stop offset="100%" stop-color="rgba(166,23,45,0.13)"/>
+          </linearGradient>
+          <linearGradient id="rewardWashGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="rgba(79,106,44,0.14)"/>
+            <stop offset="100%" stop-color="rgba(79,106,44,0.04)"/>
+          </linearGradient>
+          <radialGradient id="rewardGlowGrad" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%"   stop-color="rgba(79,106,44,0.45)"/>
+            <stop offset="100%" stop-color="rgba(79,106,44,0)"/>
+          </radialGradient>
+          <radialGradient id="travelerHaloGrad" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%"   stop-color="rgba(166,23,45,0.40)"/>
+            <stop offset="100%" stop-color="rgba(166,23,45,0)"/>
+          </radialGradient>
+
+          <!-- arrowhead for axis arrows -->
+          <marker id="axisArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1a1a1a" />
+          </marker>
+        </defs>
+
+        <!-- Light watercolor wash for pain zone -->
+        <rect class="pain-wash" x="100" y="240" width="1080" height="420" fill="url(#painWashGrad)"/>
+
+        <!-- Light wash for reward zone -->
+        <rect class="reward-wash" x="100" y="60" width="1080" height="180" fill="url(#rewardWashGrad)"/>
+
+        <!-- Reward glow that fades in once traveler crosses zero -->
+        <ellipse class="reward-glow" id="rewardGlow" cx="1020" cy="160" rx="360" ry="170" fill="url(#rewardGlowGrad)"/>
+
+        <!-- Phase title card. Lives in a defensive empty corridor:
+             x: 480..800  (s10 starts at ~x=890; REWARD watermark text begins ~x=1005)
+             y:  72..164  (every annotation in this x-range sits at y >= 195; watermark cap is at y=83 but lives
+                          at x >= 1005, well to the right of this box's right edge at x=800)
+             Width 320, height 92 — tighter horizontal padding (~17px each side at the widest
+             detail line) while still fitting "The Check-the-Box Trap" and the wrapped 2-line detail. -->
+        <g id="phaseTitle">
+          <rect class="pt-bg" x="480" y="72" width="320" height="92"/>
+          <text class="pt-eyebrow" x="640" y="92"  text-anchor="middle">Where we are on the journey</text>
+          <text class="pt-title"   id="ptTitle"   x="640" y="118" text-anchor="middle">Neutral</text>
+          <text class="pt-detail"  id="ptDetail1" x="640" y="138" text-anchor="middle">Before MRM. Velocity steady,</text>
+          <text class="pt-detail"  id="ptDetail2" x="640" y="153" text-anchor="middle">exposure unmanaged.</text>
+        </g>
+
+        <!-- Y axis -->
+        <line class="axis-line" x1="100" y1="40"  x2="100" y2="660" marker-start="url(#axisArrow)"/>
+        <!-- After rotate(-90 ...), a "→" character renders pointing UP and a
+             "←" renders pointing DOWN, which is the direction we want each
+             axis label's arrow to read. -->
+        <text class="axis-label" x="58" y="80"  text-anchor="middle" transform="rotate(-90 58 80)">REWARD →</text>
+        <text class="axis-label" x="58" y="600" text-anchor="middle" transform="rotate(-90 58 600)">← PAIN</text>
+
+        <!-- Y axis tick at zero -->
+        <line class="grid-line" x1="100" y1="240" x2="1180" y2="240"/>
+        <line class="zero-line" x1="100" y1="240" x2="1180" y2="240"/>
+        <text class="zero-tag" x="92" y="245" text-anchor="end">0 · NEUTRAL</text>
+
+        <!-- X axis -->
+        <line class="axis-line" x1="100" y1="665" x2="1200" y2="665" marker-end="url(#axisArrow)"/>
+        <text class="axis-label" x="640" y="695" text-anchor="middle">GOVERNANCE BUILD-OUT</text>
+
+        <!-- Faint vertical phase ticks under the axis -->
+        <g id="phaseTicks"></g>
+
+        <!-- Curve container: base + trail -->
+        <path id="curveBase"  class="curve-base"  d=""/>
+        <path id="curveTrail" class="curve-trail" d=""/>
+
+        <!-- Stations get injected here -->
+        <g id="stations"></g>
+
+        <!-- Featured: big bottom callout (drawn separately to layer above) -->
+        <g id="bottomCallout"></g>
+
+        <!-- Terminus marker (right end, "excellent") -->
+        <g id="terminusGroup"></g>
+
+        <!-- Traveler -->
+        <g class="traveler" id="traveler" transform="translate(110,240)">
+          <circle class="traveler-halo" id="travHalo" r="22" fill="url(#travelerHaloGrad)"/>
+          <circle class="traveler-tail" cx="0" cy="0" r="8.5"/>
+          <circle class="traveler-disc" r="5.5"/>
+        </g>
+      </svg>
+
+      <div class="canvas-caption" id="canvasCaption">A modeller&#39;s journey across the governance build-out</div>
+    </div>
+
+    <div class="status-strip" id="statusStrip">
+      <span class="status-eyebrow">Current state</span>
+      <span class="status-zone" id="statusZone">Neutral</span>
+      <span class="status-divider">·</span>
+      <span class="status-detail" id="statusDetail">Before MRM. Velocity steady, exposure unmanaged.</span>
+      <div class="status-meter" id="statusMeter"><div class="fill" id="statusMeterFill"></div></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <div class="control-label"><span>Playback</span></div>
+      <div class="btn-row">
+        <button id="playBtn">Pause</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+    </div>
+    <div class="control">
+      <div class="control-label"><span>Speed</span><span class="control-value" id="speedVal">1×</span></div>
+      <input type="range" id="speed" min="0" max="6" step="1" value="3" />
+    </div>
+    <div class="control" style="grid-column: span 2; min-width: 0;">
+      <div class="control-label">
+        <span>Position along the dip</span>
+        <span class="control-value" id="posVal">0%</span>
+      </div>
+      <input type="range" id="pos" min="0" max="1000" step="1" value="0" />
+    </div>
+  </div>
+
+  <div class="stage-tracker" id="tracker"></div>
+
+  <div class="notes">
+    <p><strong>The shape.</strong> Anyone who has been through a serious governance build-out knows the shape. Things were fine, more or less, before. Then the program lands — the committees, the validators, the sign-off chains, the documentation templates — and for a long time it gets <em>worse</em>. Velocity drops. Engineers grumble. Auditors are still unhappy. The sponsors who funded the program start asking when, exactly, the value shows up.</p>
+
+    <p><strong>Why it has to dip.</strong> The first half of the curve is everything you have to <em>put in place</em> before the system starts paying you back. Independent validators do not generate models; they slow models down. A separation-of-duties matrix is a calendar of handoffs. A sign-off chain is a queue. A version-control mandate is a meeting about a meeting. None of those things are productive on their first day. They are scaffolding — and scaffolding has a cost before the building does.</p>
+
+    <p><strong>The bottom is the trap.</strong> Most programs stall at the bottom. The controls are in place, the pain is real, the value has not landed, and the easiest political move is to declare <em>"MRM done"</em> and stop investing. This is the check-the-box equilibrium: every control exists, every checklist gets initialed, and nothing actually compounds. The diagram on this page is mostly a warning about that bottom.</p>
+
+    <p><strong>What turns the curve.</strong> Past the trough, the same controls that hurt start paying back — but only when they stop being one-off paperwork and start being <em>primitives</em>. Lineage that's a chore on day one is automatic by month twelve. A validation pattern that took a quarter to write is a button by year two. Self-service governed environments mean a new modeler is producing on day three, not day ninety. The work was the same; the leverage is finally there.</p>
+
+    <p><strong>The right side of the curve.</strong> Past zero, the reward is not just <em>back to where we were</em>. It is materially better than before MRM, because every model now ships with auditable lineage built in, every team can re-use a validated pattern, and the cost of compliance is amortised across the platform instead of paid by each project. That is the shape of the Domino value proposition: the dip is unavoidable, but the slope after it is steep, and the height it reaches is permanent.</p>
+
+    <p><strong>The X-axis.</strong> <em>Governance build-out</em> is shorthand for: standing up the org, hiring validators, writing the controls map, codifying the sign-off chain, and — most of all — putting a platform under the controls so they execute themselves. The right end of the axis is not "more meetings". It is a system where the right thing is the easy thing.</p>
+  </div>
+
+  <div class="byline">Illustration · Cowork Studio · Reading: Andy Grove on inflection points; Marc Andreessen on the deployment curve; Carlota Perez on installation vs. deployment phases; J. Neal Brown <em>The Dip</em>.</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Geometry: hand-tuned waypoints for the dip ----------
+  // The plot lives inside a 1280x720 viewBox. The zero line sits at y=240.
+  // Pain stretches down to y=620 (depth 380px). Reward rises to y=85 (height 155px).
+  //
+  // Waypoints are picked to give the curve a recognisable J shape: a shallow
+  // initial decline, a steepening descent through the middle of the build-out,
+  // a rounded basin at the bottom, a brisk recovery, and a confident climb
+  // into reward that asymptotes near "excellent".
+  const WAYPOINTS = [
+    { x:  110, y: 240 },  // 0 · neutral start
+    { x:  175, y: 244 },  // 1 · faintest dip — early commitments
+    { x:  250, y: 268 },  // 2 · committee stood up
+    { x:  330, y: 320 },  // 3 · validation set up
+    { x:  410, y: 395 },  // 4 · separation of duties biting
+    { x:  485, y: 485 },  // 5 · documentation overhead
+    { x:  555, y: 565 },  // 6 · audit & security gates
+    { x:  605, y: 605 },  // 7 · approaching bottom
+    { x:  640, y: 615 },  // 8 · BOTTOM
+    { x:  690, y: 600 },  // 9 · rebound starts
+    { x:  755, y: 540 },  // 10 · reusable patterns kicking in
+    { x:  825, y: 440 },  // 11 · self-service environments
+    { x:  890, y: 330 },  // 12 · lineage by default
+    { x:  945, y: 240 },  // 13 · CROSS ZERO
+    { x: 1000, y: 175 },  // 14 · trust as a feature
+    { x: 1060, y: 130 },  // 15 · ship faster than before
+    { x: 1115, y: 100 },  // 16 · compounding
+    { x: 1170, y:  85 },  // 17 · excellent
+  ];
+
+  // Catmull-Rom -> cubic Bezier path generator. Smooth, no overshoot at boundaries.
+  function smoothPath(pts, tension) {
+    if (pts.length < 2) return "";
+    const t = tension == null ? 0.5 : tension;
+    let d = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] || p2;
+      const c1x = p1.x + ((p2.x - p0.x) / 6) * (t * 2);
+      const c1y = p1.y + ((p2.y - p0.y) / 6) * (t * 2);
+      const c2x = p2.x - ((p3.x - p1.x) / 6) * (t * 2);
+      const c2y = p2.y - ((p3.y - p1.y) / 6) * (t * 2);
+      d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+    }
+    return d;
+  }
+
+  const pathD = smoothPath(WAYPOINTS, 0.55);
+  const curveBase = document.getElementById("curveBase");
+  const curveTrail = document.getElementById("curveTrail");
+  curveBase.setAttribute("d", pathD);
+  curveTrail.setAttribute("d", pathD);
+
+  // SVGGeometryElement APIs let us walk the curve by arc length.
+  const totalLen = curveBase.getTotalLength();
+  // Initialise dasharray so the trail starts invisible and grows to length.
+  curveTrail.setAttribute("stroke-dasharray", `0 ${totalLen}`);
+
+  // ---------- Stations along the curve ----------
+  // `t` is the fraction of arc length (0..1). The actual zero-crossing of
+  // this curve is at t ≈ 0.808 (waypoint 13). Stations are picked so each
+  // descent label sits in a comfortably wide spot of the descending wedge,
+  // and each ascent label sits in the symmetric spot on the way up. Reward
+  // labels (past zero) use absolute (lx,ly) positions instead of perpendicular
+  // offsets so they can stack neatly along the right edge.
+  //
+  // Three placement modes:
+  //   "perp"      — perpendicular offset from curve at distance labelDist (default)
+  //   "absolute"  — explicit (lx,ly) position; perpendicular ignored
+  // All stations use absolute placement so the visual layout can be tuned
+  // deliberately. Descent labels stack diagonally down-right above the
+  // descending curve; ascent labels sit in the wedge above the ascending
+  // curve (positioned high enough that no label x-range intersects any curve
+  // y-value in that x-range — guaranteed no curve crossings). Reward labels
+  // are footnote-style callouts in the lower-right pain area, with vertical
+  // leaders that visibly cross the zero line up to their stations on the
+  // curve in reward zone — editorial style, no curve crossings.
+  const STATIONS = [
+    // ---- pain side, descent — keep the prior style, just no eyebrow ----
+    { id: "s1", num: "01", t: 0.080, lx: 250, ly: 200, anchor: "start",
+      noEyebrow: true,
+      label: "Standing up the MRM org & AI committees", reward: false },
+    { id: "s2", num: "02", t: 0.180, lx: 350, ly: 270, anchor: "start",
+      noEyebrow: true,
+      label: "Independent validation & testing",        reward: false },
+    { id: "s3", num: "03", t: 0.275, lx: 460, ly: 320, anchor: "start",
+      noEyebrow: true,
+      label: "Quarterly revalidation cycles",          reward: false },
+    // s4 wraps so the descent column doesn't intrude into s6's territory.
+    { id: "s4", num: "04", t: 0.370, lx: 530, ly: 455, anchor: "start",
+      noEyebrow: true,
+      label: ["Audit, security,", "version-control mandates"],   reward: false },
+
+    // ---- ascent — verbose orthogonal labels matching descent's style ----
+    { id: "s5", num: "05", t: 0.555, perpSide: "above", perpDist: 70,
+      anchor: "middle", noEyebrow: true,
+      label: ["Reusable control", "patterns"],          reward: false },
+    { id: "s6", num: "06", t: 0.625, perpSide: "above", perpDist: 100,
+      anchor: "middle", noEyebrow: true,
+      label: ["Self-service", "governed environments"], reward: false },
+    { id: "s7", num: "07", t: 0.690, perpSide: "above", perpDist: 75,
+      anchor: "middle", noEyebrow: true,
+      label: ["Lineage by default,", "not by chore"],   reward: false },
+    { id: "s8", num: "08", t: 0.760, perpSide: "above", perpDist: 70,
+      anchor: "middle", noEyebrow: true,
+      label: ["Easier sharing ·", "faster onboarding"], reward: false },
+
+    // ---- transition / reward — first crossing into positive territory ----
+    { id: "s9",  num: "09", t: 0.815, perpSide: "above", perpDist: 70,
+      anchor: "middle", noEyebrow: true,
+      label: "Audit-ready by default",                   reward: true },
+    { id: "s10", num: "10", t: 0.860, perpSide: "above", perpDist: 90,
+      anchor: "middle", noEyebrow: true,
+      label: "MRM becomes a source of value",            reward: true },
+    // s11 and s12 both live on the rising right edge of the curve; without
+    // explicit positioning their below-curve labels collide (s12's
+    // right-anchored block reaches left into s11's centered block at the
+    // same y). Pin them with absolute coords: s11 sits low-center under its
+    // marker, s12 sits high-right against the corner. ~50px of vertical
+    // separation between them keeps the two-line stacks from overlapping.
+    { id: "s11", num: "11", t: 0.925, lx: 1080, ly: 200,
+      anchor: "middle", noEyebrow: true,
+      label: ["Models ship faster", "than before MRM"],  reward: true },
+    // lx pulled in to 1175 so the right-anchored block stays inside the
+    // reward wash (which ends at x=1180) instead of bleeding into the panel
+    // margin past the plot.
+    { id: "s12", num: "12", t: 0.988, lx: 1175, ly: 145,
+      anchor: "end",    noEyebrow: true,
+      label: ["Compounding", "velocity"],                reward: true },
+  ];
+
+  // ---------- Bottom-of-dip callout ----------
+  // The actual basin sits near t≈0.46 (waypoint 8 at (640, 615)). The callout
+  // is laid out compactly on a single visual line below the curve, fitting in
+  // the gap between the curve floor (y≈615) and the X-axis line (y=665).
+  const BOTTOM_CALLOUT = {
+    t: 0.463,
+    placement: "absolute",
+    // ly pushed down vs. the curve floor (~y=615) so the eyebrow + title get
+    // visible breathing room from the basin without bumping the x-axis (y=665).
+    lx: 640, ly: 652,           // anchor of the title text
+    label: "The check-the-box trap",
+    sub: "Most governance programs stall here.",
+  };
+
+  // ---------- Helpers ----------
+  function pointAtT(t) {
+    return curveBase.getPointAtLength(Math.max(0, Math.min(1, t)) * totalLen);
+  }
+
+  // Tangent via a small finite difference. Returns a unit vector.
+  function tangentAtT(t) {
+    const eps = 0.0008;
+    const a = pointAtT(Math.max(0, t - eps));
+    const b = pointAtT(Math.min(1, t + eps));
+    let dx = b.x - a.x;
+    let dy = b.y - a.y;
+    const m = Math.hypot(dx, dy) || 1;
+    return { x: dx / m, y: dy / m };
+  }
+
+  // The "above the curve" perpendicular always points toward smaller y (visually up)
+  // when the curve is moving roughly rightward. We pick whichever of the two
+  // perpendicular candidates has the smaller y component.
+  function perpAtT(t, side /* "above" | "below" */) {
+    const tan = tangentAtT(t);
+    const cw = { x:  tan.y, y: -tan.x }; // 90° CW
+    const ccw = { x: -tan.y, y:  tan.x }; // 90° CCW
+    if (side === "above") {
+      return cw.y < ccw.y ? cw : ccw;     // smaller y = visually higher
+    } else {
+      return cw.y > ccw.y ? cw : ccw;     // larger y = visually lower
+    }
+  }
+
+  // Place a label rectangle at perpendicular distance d from the curve.
+  function labelAnchorAtT(t, side, dist) {
+    const p = pointAtT(t);
+    const n = perpAtT(t, side);
+    return {
+      px: p.x, py: p.y,
+      lx: p.x + n.x * dist,
+      ly: p.y + n.y * dist,
+    };
+  }
+
+  // ---------- Build station SVG groups ----------
+  const stationsRoot = document.getElementById("stations");
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  STATIONS.forEach((st) => {
+    const curvePt = pointAtT(st.t);
+    // Three placement modes:
+    //   1. Absolute (lx, ly) — descent labels.
+    //   2. Perpendicular (perpSide + perpDist) — orthogonal "tag" labels on
+    //      the right half of the curve.
+    //   3. Fallback to old labelAnchorAtT default if neither is provided.
+    let a;
+    if (st.lx != null && st.ly != null) {
+      a = { px: curvePt.x, py: curvePt.y, lx: st.lx, ly: st.ly };
+    } else if (st.perpSide) {
+      a = labelAnchorAtT(st.t, st.perpSide, st.perpDist || 60);
+    } else {
+      a = labelAnchorAtT(st.t, st.side || "above", st.labelDist || 60);
+    }
+
+    const g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("class", "station " + (st.reward ? "reward" : "pain") + (st.featured ? " featured" : ""));
+    g.setAttribute("data-id", st.id);
+    g.setAttribute("data-t", String(st.t));
+
+    // connector — from station marker to label position
+    const conn = document.createElementNS(SVG_NS, "line");
+    conn.setAttribute("class", "st-connector");
+    conn.setAttribute("x1", a.px.toFixed(2));
+    conn.setAttribute("y1", a.py.toFixed(2));
+    conn.setAttribute("x2", a.lx.toFixed(2));
+    conn.setAttribute("y2", a.ly.toFixed(2));
+    g.appendChild(conn);
+
+    // marker on the curve
+    const marker = document.createElementNS(SVG_NS, "circle");
+    marker.setAttribute("class", "st-marker");
+    marker.setAttribute("cx", a.px.toFixed(2));
+    marker.setAttribute("cy", a.py.toFixed(2));
+    marker.setAttribute("r", "4.5");
+    g.appendChild(marker);
+
+    // label group
+    const labelG = document.createElementNS(SVG_NS, "g");
+
+    // eyebrow ("STATION 0X") — suppressed for orthogonal tag labels
+    if (!st.noEyebrow) {
+      const num = document.createElementNS(SVG_NS, "text");
+      num.setAttribute("class", "st-label-num");
+      num.setAttribute("x", a.lx.toFixed(2));
+      num.setAttribute("y", (a.ly - 14).toFixed(2));
+      num.setAttribute("text-anchor", st.anchor);
+      num.textContent = "STATION " + st.num;
+      labelG.appendChild(num);
+    }
+
+    // label — accept either a single string or an array of lines (word wrap)
+    const lines = Array.isArray(st.label) ? st.label : [st.label];
+    lines.forEach((line, i) => {
+      const txt = document.createElementNS(SVG_NS, "text");
+      txt.setAttribute("class", "st-label-text");
+      txt.setAttribute("x", a.lx.toFixed(2));
+      txt.setAttribute("y", (a.ly + i * 16).toFixed(2));
+      txt.setAttribute("text-anchor", st.anchor);
+      txt.textContent = line;
+      labelG.appendChild(txt);
+    });
+
+    g.appendChild(labelG);
+    stationsRoot.appendChild(g);
+  });
+
+  // ---------- Bottom callout (compact horizontal layout) ----------
+  // Lives in the strip between the curve floor and the X-axis line. Eyebrow
+  // and italic title are stacked tightly to fit the 50px gap. Featured pulse
+  // ring on the curve marker draws the eye to the basin.
+  const bottomCalloutRoot = document.getElementById("bottomCallout");
+  (function buildBottomCallout() {
+    const curvePt = pointAtT(BOTTOM_CALLOUT.t);
+    const a = { px: curvePt.x, py: curvePt.y, lx: BOTTOM_CALLOUT.lx, ly: BOTTOM_CALLOUT.ly };
+
+    const g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("class", "station featured pain");
+    g.setAttribute("data-id", "bottom");
+    g.setAttribute("data-t", String(BOTTOM_CALLOUT.t));
+
+    // pulse ring on the curve marker
+    const pulse = document.createElementNS(SVG_NS, "circle");
+    pulse.setAttribute("class", "pulse-ring");
+    pulse.setAttribute("cx", a.px.toFixed(2));
+    pulse.setAttribute("cy", a.py.toFixed(2));
+    pulse.setAttribute("r", "8");
+    g.appendChild(pulse);
+
+    // connector — short vertical line to the callout below the basin
+    const conn = document.createElementNS(SVG_NS, "line");
+    conn.setAttribute("class", "st-connector");
+    conn.setAttribute("x1", a.px.toFixed(2));
+    conn.setAttribute("y1", a.py.toFixed(2));
+    conn.setAttribute("x2", a.lx.toFixed(2));
+    conn.setAttribute("y2", (a.ly - 14).toFixed(2));
+    g.appendChild(conn);
+
+    // marker on curve
+    const marker = document.createElementNS(SVG_NS, "circle");
+    marker.setAttribute("class", "st-marker");
+    marker.setAttribute("cx", a.px.toFixed(2));
+    marker.setAttribute("cy", a.py.toFixed(2));
+    marker.setAttribute("r", "5.5");
+    g.appendChild(marker);
+
+    // labels — eyebrow + title on a single line stacked compactly
+    const labelG = document.createElementNS(SVG_NS, "g");
+
+    const num = document.createElementNS(SVG_NS, "text");
+    num.setAttribute("class", "st-label-num");
+    num.setAttribute("x", a.lx.toFixed(2));
+    num.setAttribute("y", (a.ly - 14).toFixed(2));
+    num.setAttribute("text-anchor", "middle");
+    num.textContent = "BOTTOM OF THE DIP";
+    labelG.appendChild(num);
+
+    const title = document.createElementNS(SVG_NS, "text");
+    title.setAttribute("class", "st-label-text");
+    title.setAttribute("x", a.lx.toFixed(2));
+    title.setAttribute("y", a.ly.toFixed(2));
+    title.setAttribute("text-anchor", "middle");
+    title.textContent = BOTTOM_CALLOUT.label + " — " + BOTTOM_CALLOUT.sub;
+    labelG.appendChild(title);
+
+    g.appendChild(labelG);
+    bottomCalloutRoot.appendChild(g);
+  })();
+
+  // ---------- Terminus marker ----------
+  // (Removed: the "Excellent" green dot + glow + label at the right end of
+  // the curve. The reward stations carry the narrative on their own; the
+  // extra terminus felt redundant with station 12 "Compounding velocity".)
+
+  // ---------- Phase ticks under the X axis ----------
+  // Mark four conceptual phases under the build-out axis: BEFORE, BUILDING,
+  // BOTTOM, COMPOUNDING, REWARD. These are visual; they correspond to the
+  // stage tracker pills below the SVG.
+  const PHASES = [
+    { t: 0.000, label: "Before",      align: "start"  },
+    { t: 0.220, label: "Building",    align: "middle" },
+    { t: 0.463, label: "The Trap",    align: "middle" },
+    { t: 0.680, label: "Compounding", align: "middle" },
+    { t: 0.985, label: "Reward",      align: "end"    },
+  ];
+  const phaseRoot = document.getElementById("phaseTicks");
+  PHASES.forEach((ph) => {
+    const p = pointAtT(ph.t);
+    const tk = document.createElementNS(SVG_NS, "line");
+    tk.setAttribute("class", "grid-line");
+    tk.setAttribute("x1", p.x);
+    tk.setAttribute("x2", p.x);
+    tk.setAttribute("y1", 665);
+    tk.setAttribute("y2", 673);
+    phaseRoot.appendChild(tk);
+
+    const lbl = document.createElementNS(SVG_NS, "text");
+    lbl.setAttribute("class", "grid-tick");
+    lbl.setAttribute("x", p.x);
+    lbl.setAttribute("y", 668);
+    lbl.setAttribute("text-anchor", ph.align);
+    lbl.style.dominantBaseline = "hanging";
+    lbl.style.fontSize = "9px";
+    lbl.style.letterSpacing = "0.16em";
+    lbl.textContent = ph.label.toUpperCase();
+    phaseRoot.appendChild(lbl);
+  });
+
+  // ---------- Status overlay ----------
+  // The status overlay narrates the journey: zone label, italic detail line,
+  // and a meter that fills with the absolute "intensity" of the current y
+  // (depth into pain or height into reward). It's the same number twice —
+  // colored differently when above vs below zero.
+
+  const statusZoneEl   = document.getElementById("statusZone");
+  const statusDetailEl = document.getElementById("statusDetail");
+  const statusMeter    = document.getElementById("statusMeter");
+  const statusFill     = document.getElementById("statusMeterFill");
+  // In-plot phase title card (mirrors the status strip narration inside the
+  // canvas so the viewer doesn't have to glance away from the curve).
+  const ptTitle    = document.getElementById("ptTitle");
+  const ptDetail1  = document.getElementById("ptDetail1");
+  const ptDetail2  = document.getElementById("ptDetail2");
+
+  // Word-wrap a detail line into (line1, line2) at the nearest space before
+  // maxChars, so long detail strings don't blow past the card's interior
+  // padding. Returns ["", ""] for empty, [text, ""] for short text. Tuned
+  // for the ~340px usable interior at 11px italic serif.
+  function wrapDetail(text, maxChars) {
+    if (!text) return ["", ""];
+    if (text.length <= maxChars) return [text, ""];
+    let split = text.lastIndexOf(" ", maxChars);
+    if (split <= 0) split = text.indexOf(" ", maxChars);
+    if (split <= 0) return [text, ""];
+    return [text.slice(0, split), text.slice(split + 1)];
+  }
+
+  // Map progress -> human-readable narration. The boundaries match the
+  // PHASES so the SVG ticks and the overlay agree.
+  function narrate(progress, py) {
+    // intensity in [0,1] relative to pain depth or reward height
+    const ZERO_Y = 240;
+    const PAIN_FLOOR = 615;
+    const REWARD_TOP = 85;
+    let intensity, zoneClass, zoneLabel, detail;
+
+    if (py >= ZERO_Y) {
+      intensity = (py - ZERO_Y) / (PAIN_FLOOR - ZERO_Y);
+    } else {
+      intensity = (ZERO_Y - py) / (ZERO_Y - REWARD_TOP);
+    }
+    intensity = Math.max(0, Math.min(1, intensity));
+
+    if (progress < 0.05) {
+      zoneClass = ""; zoneLabel = "Neutral";
+      detail = "Before MRM. Velocity steady, exposure unmanaged.";
+    } else if (progress < 0.16) {
+      zoneClass = "pain"; zoneLabel = "Building the Org";
+      detail = "Committees, charters, validators. None of this ships a model yet.";
+    } else if (progress < 0.30) {
+      zoneClass = "pain"; zoneLabel = "Adding Controls";
+      detail = "Independent validation, separation of duties — every workflow gets a handoff.";
+    } else if (progress < 0.42) {
+      zoneClass = "pain"; zoneLabel = "Process Overhead";
+      detail = "Documentation, sign-offs, audit gates. Real work, all of it scaffolding.";
+    } else if (progress < 0.52) {
+      zoneClass = "pain"; zoneLabel = "The Check-the-Box Trap";
+      detail = "All controls in place. Pain real, value not landed yet. Most programs stop here.";
+    } else if (progress < 0.68) {
+      zoneClass = "pain"; zoneLabel = "Compounding Begins";
+      detail = "Controls become primitives. Patterns become buttons. The same work, with leverage.";
+    } else if (progress < 0.808) {
+      zoneClass = "pain"; zoneLabel = "Climbing Toward Zero";
+      detail = "Self-service governed environments mean ship-day is closer than start-day.";
+    } else if (progress < 0.95) {
+      zoneClass = "reward"; zoneLabel = "Above Water";
+      detail = "Past neutral. Trust, lineage, auditability are now defaults, not chores.";
+    } else {
+      zoneClass = "reward"; zoneLabel = "Excellent";
+      detail = "Velocity higher than before MRM. Compliance amortised across the platform.";
+    }
+    return { intensity, zoneClass, zoneLabel, detail };
+  }
+
+  function updateStatus(progress, py) {
+    const n = narrate(progress, py);
+    statusZoneEl.textContent = n.zoneLabel;
+    statusZoneEl.className = "status-zone " + (n.zoneClass || "");
+    statusDetailEl.textContent = n.detail;
+    statusMeter.className = "status-meter " + (n.zoneClass || "");
+    statusFill.style.width = (n.intensity * 100).toFixed(1) + "%";
+
+    // Mirror into the in-plot title card.
+    if (ptTitle) {
+      ptTitle.textContent = n.zoneLabel;
+      ptTitle.setAttribute("class", "pt-title " + (n.zoneClass || ""));
+    }
+    if (ptDetail1 && ptDetail2) {
+      const [d1, d2] = wrapDetail(n.detail, 52);
+      ptDetail1.textContent = d1;
+      ptDetail2.textContent = d2;
+    }
+  }
+
+  // ---------- Stage tracker pills (bottom of page) ----------
+  const STAGES = [
+    { name: "Before MRM",           kind: "neutral", t: 0.00 },
+    { name: "Building",             kind: "pain",    t: 0.05 },
+    { name: "Adding Controls",      kind: "pain",    t: 0.16 },
+    { name: "Process Overhead",     kind: "pain",    t: 0.30 },
+    { name: "The Trap",             kind: "featured",t: 0.42 },
+    { name: "Compounding",          kind: "pain",    t: 0.52 },
+    { name: "Climbing",             kind: "pain",    t: 0.68 },
+    { name: "Above Water",          kind: "reward",  t: 0.808 },
+    { name: "Excellent",            kind: "reward",  t: 0.95 },
+  ];
+  const tracker = document.getElementById("tracker");
+  STAGES.forEach((s, i) => {
+    const pill = document.createElement("span");
+    pill.className = "stage-pill " + (s.kind === "featured" ? "featured" : s.kind);
+    pill.dataset.idx = i;
+    pill.dataset.t = String(s.t);
+    pill.innerHTML = `<span class="dot"></span><span>${s.name}</span>`;
+    pill.style.cursor = "pointer";
+    pill.title = "Jump to: " + s.name;
+    pill.addEventListener("click", () => {
+      // nudge t slightly past the boundary so this stage and prior stages
+      // light up but not the next one yet
+      setProgress(Math.min(0.999, parseFloat(pill.dataset.t) + 0.005));
+      state.playing = false;
+      playBtn.textContent = "Play";
+    });
+    tracker.appendChild(pill);
+  });
+  function updateTracker(progress) {
+    [...tracker.children].forEach((el) => {
+      const t = parseFloat(el.dataset.t);
+      el.classList.toggle("active", progress >= t);
+    });
+  }
+
+  // ---------- Animation state ----------
+  const state = {
+    progress: 0,    // 0..1, fraction of arc length traversed
+    playing: true,
+    speed: 1,       // multiplied into baseSpeed
+    baseDuration: 28, // seconds for full traversal at 1×
+  };
+
+  const traveler = document.getElementById("traveler");
+  const travHalo = document.getElementById("travHalo");
+  const rewardGlow = document.getElementById("rewardGlow");
+  // Terminus marker was removed; these refs are kept null so the existing
+  // setProgress branch can short-circuit without DOM lookups firing.
+  const terminusMarker = null;
+  const terminusGlow = null;
+
+  function setProgress(p) {
+    state.progress = Math.max(0, Math.min(1, p));
+    const len = state.progress * totalLen;
+
+    // Move traveler
+    const pt = curveBase.getPointAtLength(len);
+    traveler.setAttribute("transform", `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+
+    // Trail dasharray: visible portion = traversed length, then a long gap
+    curveTrail.setAttribute("stroke-dasharray", `${len.toFixed(2)} ${(totalLen - len + 1).toFixed(2)}`);
+
+    // Light up stations as the traveler passes them. Use a small lookahead so
+    // the marker lights up just as the traveler arrives, not after.
+    const LOOKAHEAD = 0.005;
+    [...stationsRoot.children, ...bottomCalloutRoot.children].forEach((g) => {
+      const t = parseFloat(g.dataset.t);
+      const passed = state.progress + LOOKAHEAD >= t;
+      g.classList.toggle("lit", passed);
+      if (passed && g.classList.contains("featured")) g.classList.add("passed");
+      else if (!passed && g.classList.contains("featured")) g.classList.remove("passed");
+    });
+
+    // (Reward glow intentionally not triggered — keep the background steady
+    // through the whole journey so nothing snaps when the traveler crosses
+    // zero. The glow element still exists in the DOM but stays invisible.)
+
+    // Terminus highlight removed along with the marker itself.
+
+    // Halo modulates only its size and opacity with depth — color stays
+    // constant (the same accent halo throughout the journey) so the look
+    // doesn't shift at the zero crossing.
+    const py = pt.y;
+    const ZERO_Y = 240, FLOOR = 615, TOP = 85;
+    let depthAbs;
+    if (py >= ZERO_Y) depthAbs = (py - ZERO_Y) / (FLOOR - ZERO_Y);
+    else              depthAbs = (ZERO_Y - py) / (ZERO_Y - TOP);
+    travHalo.setAttribute("r", String(18 + depthAbs * 14));
+    travHalo.style.opacity = String(0.18 + depthAbs * 0.40);
+
+    // Update overlay narrative + meter
+    updateStatus(state.progress, py);
+
+    // Update tracker
+    updateTracker(state.progress);
+
+    // Sync slider position
+    const slider = document.getElementById("pos");
+    if (slider && document.activeElement !== slider) {
+      slider.value = String(Math.round(state.progress * 1000));
+    }
+    document.getElementById("posVal").textContent = Math.round(state.progress * 100) + "%";
+  }
+
+  // ---------- Animation loop ----------
+  // Phase machine. The journey runs forward 0→1, holds briefly at the end,
+  // then fades the trail + traveler out, snaps progress back to 0 under
+  // cover of the fade, then fades them back in. No reverse motion — just
+  // a clean cross-fade reset and another forward pass.
+  //   forward  → endHold  → fadeOut  → fadeIn  → forward …
+  let last = performance.now();
+  let phase = "forward";
+  let phaseTime = 0;
+  const HOLD_SECONDS    = 0.45;   // pause at terminus to register the win
+  const FADE_OUT_SECS   = 0.55;   // trail/traveler fade to invisible
+  const FADE_IN_SECS    = 0.55;   // and back to fully visible
+
+  function startFadeOut() {
+    curveTrail.classList.add("looping-out");
+    traveler.classList.add("looping-out");
+  }
+  function endFadeOut() {
+    // Snap progress to 0 while the trail/traveler are invisible — the user
+    // never sees backward motion. Lit stations un-light via their own CSS
+    // transitions during the same window.
+    setProgress(0);
+    curveTrail.classList.remove("looping-out");
+    traveler.classList.remove("looping-out");
+  }
+  function clearLoopState() {
+    phase = "forward";
+    phaseTime = 0;
+    curveTrail.classList.remove("looping-out");
+    traveler.classList.remove("looping-out");
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (state.playing) {
+      if (phase === "forward") {
+        const inc = (dt * state.speed) / state.baseDuration;
+        let p = state.progress + inc;
+        if (p >= 1) {
+          p = 1;
+          phase = "endHold";
+          phaseTime = 0;
+        }
+        setProgress(p);
+      } else if (phase === "endHold") {
+        phaseTime += dt;
+        if (phaseTime >= HOLD_SECONDS) {
+          startFadeOut();
+          phase = "fadeOut";
+          phaseTime = 0;
+        }
+      } else if (phase === "fadeOut") {
+        phaseTime += dt;
+        if (phaseTime >= FADE_OUT_SECS) {
+          endFadeOut();
+          phase = "fadeIn";
+          phaseTime = 0;
+        }
+      } else if (phase === "fadeIn") {
+        phaseTime += dt;
+        if (phaseTime >= FADE_IN_SECS) {
+          phase = "forward";
+        }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---------- Controls wiring ----------
+  const playBtn = document.getElementById("playBtn");
+  playBtn.addEventListener("click", () => {
+    if (state.progress >= 1 && !state.playing) {
+      // User is impatient — restart immediately rather than waiting.
+      clearLoopState();
+      setProgress(0);
+      state.playing = true;
+      playBtn.textContent = "Pause";
+    } else {
+      state.playing = !state.playing;
+      playBtn.textContent = state.playing ? "Pause" : "Play";
+    }
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    clearLoopState();
+    setProgress(0);
+    state.playing = true;
+    playBtn.textContent = "Pause";
+    document.getElementById("speed").value = "3";
+    document.getElementById("speed").dispatchEvent(new Event("input"));
+  });
+
+  const SPEED_STOPS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3];
+  const speedEl = document.getElementById("speed");
+  const speedVal = document.getElementById("speedVal");
+  function applySpeed() {
+    const v = SPEED_STOPS[parseInt(speedEl.value, 10)];
+    state.speed = v;
+    speedVal.textContent = v + "×";
+  }
+  speedEl.addEventListener("input", applySpeed);
+  applySpeed();
+
+  const posEl = document.getElementById("pos");
+  posEl.addEventListener("input", () => {
+    const p = parseInt(posEl.value, 10) / 1000;
+    clearLoopState();
+    setProgress(p);
+    // Pause auto-play while scrubbing
+    state.playing = false;
+    playBtn.textContent = "Play";
+  });
+
+  // Click on the SVG to jump to that x-fraction of the path
+  const svg = document.getElementById("dipSvg");
+  const canvasWrap = document.getElementById("canvasWrap");
+  canvasWrap.addEventListener("click", (e) => {
+    if (e.target.closest("button") || e.target.closest("input")) return;
+    const rect = svg.getBoundingClientRect();
+    const xVB = ((e.clientX - rect.left) / rect.width) * 1280;
+    // Walk path samples to find nearest length whose x is closest to xVB
+    let bestL = 0, bestDx = Infinity;
+    const SAMPLES = 200;
+    for (let i = 0; i <= SAMPLES; i++) {
+      const l = (i / SAMPLES) * totalLen;
+      const p = curveBase.getPointAtLength(l);
+      const dx = Math.abs(p.x - xVB);
+      if (dx < bestDx) { bestDx = dx; bestL = l; }
+    }
+    clearLoopState();
+    setProgress(bestL / totalLen);
+    state.playing = false;
+    playBtn.textContent = "Play";
+  });
+
+  // ---------- Kick off ----------
+  setProgress(0);
+
+})();
+</script>
+</body>
+</html>

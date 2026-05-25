@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The total risk space of a model M</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f7f3ea;
+    --paper: #ffffff;
+    --paper-warm: #fdfcf8;
+    --ink: #1a1a1a;
+    --ink-soft: #3a3a3a;
+    --muted: #6b6b6b;
+    --rule: #d9d3c4;
+    --rule-strong: #b9b1a0;
+
+    --accent: #a6172d;
+    --accent-soft: rgba(166, 23, 45, 0.18);
+    --accent-wash: rgba(166, 23, 45, 0.07);
+    --accent-deep: #7a1020;
+
+    /* axis colors borrowed from the typed-operator figure so the
+       three axes read consistently across the deck */
+    --c-input:   #2c5f8d;   /* blue — typed input x */
+    --c-version: #a6172d;   /* red — version index v */
+    --c-env:     #6b7d3a;   /* olive — environment ω */
+
+    --serif: "Playfair Display", "Times New Roman", Georgia, serif;
+    --sans:  "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+    --mono:  "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 22px 22px 36px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1320px; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(24px, 2.8vw, 36px);
+    line-height: 1.06;
+    letter-spacing: -0.012em;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .dek {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(14px, 1.3vw, 16px);
+    color: var(--ink-soft);
+    max-width: 1020px;
+    margin: 0 0 16px;
+    line-height: 1.42;
+  }
+
+  /* ---------- panels ---------- */
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 9px;
+    margin-bottom: 12px;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .panel-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.1;
+  }
+  .panel-title small {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 10px;
+    letter-spacing: 0;
+  }
+  .panel-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ---------- hero scene ---------- */
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+  .hero canvas { display: block; }
+
+  .hero .label2d {
+    position: absolute;
+    color: var(--ink);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .hero .axis-title {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .hero .axis-title .var {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .hero .axis-title.input    { color: var(--c-input); }
+  .hero .axis-title.version  { color: var(--c-version); }
+  .hero .axis-title.env      { color: var(--c-env); }
+
+  .hero .tick {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .hero .wall-label {
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: rgba(253, 252, 248, 0.85);
+    padding: 3px 7px;
+    border: 1px solid var(--rule);
+  }
+
+  .hero .controls-hint {
+    position: absolute;
+    top: 12px; right: 14px;
+    font-family: var(--sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    background: rgba(253, 252, 248, 0.92);
+    padding: 4px 9px;
+    border: 1px solid var(--rule);
+    pointer-events: none;
+  }
+
+  .hero .mode-switch {
+    position: absolute;
+    top: 12px; left: 14px;
+    display: flex;
+    gap: 0;
+    background: rgba(253, 252, 248, 0.92);
+    border: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: 10px;
+  }
+  .hero .mode-switch button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--rule);
+    color: var(--muted);
+    padding: 6px 12px;
+    cursor: pointer;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--sans);
+  }
+  .hero .mode-switch button:last-child { border-right: 0; }
+  .hero .mode-switch button.on {
+    background: var(--ink);
+    color: var(--paper-warm);
+  }
+
+  .hero-caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    margin: 12px 2px 0 2px;
+  }
+  .hero-caption .figref {
+    font-family: var(--sans);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-right: 10px;
+  }
+  .hero-caption strong {
+    font-family: var(--sans);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--ink);
+  }
+  .hero-caption em { font-style: italic; }
+
+  /* ---------- shadows row ---------- */
+  .projections {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 980px) { .projections { grid-template-columns: 1fr; } }
+
+  .proj {
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+  }
+  .proj .label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .proj .label .name {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .proj .label .name em { font-style: italic; color: var(--accent); }
+  .proj .label .tag {
+    font-family: var(--sans);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .proj canvas {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: block;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+  }
+  .proj .note {
+    font-family: var(--serif);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+  .proj .note em { font-style: italic; color: var(--accent); }
+
+  /* ---------- notes / essay ---------- */
+  .notes {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.6;
+    color: #2a2a2a;
+    column-count: 3;
+    column-gap: 28px;
+    column-rule: 1px solid var(--rule);
+  }
+  @media (max-width: 980px) { .notes { column-count: 1; } }
+  .notes p { margin: 0 0 12px; break-inside: avoid; }
+  .notes strong {
+    font-family: var(--sans);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 10.5px;
+    color: var(--accent);
+    font-weight: 700;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .notes em { color: var(--accent); font-style: italic; }
+  .notes code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--accent-wash);
+    padding: 1px 4px;
+    color: var(--ink);
+  }
+
+  .byline {
+    font-family: var(--sans);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 22px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Print mode: hide interactive chrome */
+  body.print-mode .hero .mode-switch,
+  body.print-mode .hero .controls-hint { display: none !important; }
+  @media print {
+    .hero .mode-switch, .hero .controls-hint { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="eyebrow">Figure · For "The Model Operator"</div>
+    <h1>The total <em>risk space</em> of a model M</h1>
+    <p class="dek">
+      The cube is the full configuration space the model could be asked to evaluate
+      — every Input (x), every Version (v), every Environment (ω). The cloud is a
+      stress sweep across that space: each point is one configuration that has
+      actually been evaluated, populated from production call logs, deliberate stress
+      scenarios, or both. Outside the cloud is everywhere the model hasn't been seen.
+    </p>
+  </header>
+
+  <!-- ===================== HERO 3D SCENE ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        The cube and its cloud
+        <small>Input (x) × Version (v) × Environment (ω)</small>
+      </div>
+      <div class="panel-sub">Figure 1</div>
+    </div>
+
+    <div class="hero" id="hero">
+      <div class="mode-switch" role="group" aria-label="Display mode">
+        <button id="mode-both" class="on">Cloud + shadows</button>
+        <button id="mode-cloud">Cloud only</button>
+        <button id="mode-shadows">Shadows only</button>
+      </div>
+      <div class="controls-hint">drag to rotate · scroll to zoom</div>
+    </div>
+
+    <p class="hero-caption">
+      <span class="figref">Fig. 1</span>
+      The total risk space of a model M. Each point in the cube is one configuration
+      the system could be evaluated under — an Input (x), against a Version (v), in an
+      Environment (ω) — and the cloud is a stress sweep across that space.
+      <strong>It's the same move banks use to value an option:</strong> stress the
+      underlying across every plausible state, log the response, read the shape. The
+      cube can be populated from production call logs, from deliberate stress
+      scenarios, or from both. Environment (ω) is the runtime environment, decomposing
+      into ω<sub>data</sub>, ω<sub>compute</sub>, and ω<sub>config</sub> — each
+      evolving on its own governance cadence (data refreshes fastest, compute slowest,
+      config whenever someone deliberately changes it). The three shadows below show
+      the cube projected onto each pair of axes.
+    </p>
+  </section>
+
+  <!-- ===================== REFERENCE ROW ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">The three shadows</div>
+      <div class="panel-sub">Marginal projections</div>
+    </div>
+
+    <div class="projections">
+      <figure class="proj">
+        <div class="label">
+          <span class="name">footprint · <em>Input × Version</em></span>
+          <span class="tag">Back wall</span>
+        </div>
+        <canvas id="proj-xv"></canvas>
+        <div class="note">
+          Inputs against versions, with environment collapsed. Each row collects all
+          evaluations at one model version. Empty rows mean a version that has rarely
+          or never been evaluated.
+        </div>
+      </figure>
+
+      <figure class="proj">
+        <div class="label">
+          <span class="name">footprint · <em>Input × Environment</em></span>
+          <span class="tag">Floor</span>
+        </div>
+        <canvas id="proj-xo"></canvas>
+        <div class="note">
+          Inputs against environments, with version collapsed. ω here is a 1-D order
+          of environments evaluated; the underlying split into ω<sub>data</sub>,
+          ω<sub>compute</sub>, ω<sub>config</sub> is not separated on this axis.
+        </div>
+      </figure>
+
+      <figure class="proj">
+        <div class="label">
+          <span class="name">footprint · <em>Version × Environment</em></span>
+          <span class="tag">Side wall</span>
+        </div>
+        <canvas id="proj-vo"></canvas>
+        <div class="note">
+          Versions against environments, with input collapsed. (v, ω) is a grid of
+          (version, environment) pairs, each with its own risk score. The highlighted
+          empty cell has <em>no prior evaluation</em>.
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== ESSAY / NOTES ===================== -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">How to read the cube</div>
+      <div class="panel-sub">Notes</div>
+    </div>
+
+    <div class="notes">
+      <p>
+        <strong>The cloud.</strong>
+        Each point is one configuration the model could be evaluated under: an Input
+        (x), against a Version (v), in an Environment (ω). Some points come from
+        production call logs. Others come from deliberate stress scenarios run by a
+        model risk team to probe corners of the space production has not reached.
+        Together they map the response surface. Where the cloud is dense the model has
+        been thoroughly probed; where it is empty the model has <em>no evidence</em>
+        of how it would behave, and any change that would push traffic there is, by
+        definition, a governance event.
+      </p>
+      <p>
+        <strong>Vertical · Version (v).</strong>
+        Read the cube vertically and you read the version axis. <code>v</code> is
+        discrete because versions are discrete: each row in the cube collects every
+        evaluation at one fixed version. A nearly empty row means a version that was
+        deployed briefly. A dense row means a version that has carried most of the
+        load, or that a stress team has probed most aggressively.
+      </p>
+      <p>
+        <strong>Depth · Environment (ω).</strong>
+        Read the cube along its depth and you read ω, the runtime environment:
+        everything the model needs to run that isn't the input. ω decomposes into
+        three components: ω<sub>data</sub> (feature stores, retrieval corpora, market
+        feeds), ω<sub>compute</sub> (hardware, OS, container image), and
+        ω<sub>config</sub> (thresholds, flags, system prompts). Each evolves on its
+        own governance cadence. The split is the place where governance lives — a
+        different team owns each component, on a different schedule, and the boundary
+        between them is where a change has to clear an explicit review.
+      </p>
+      <p>
+        <strong>Walls · the shadows.</strong>
+        Read the walls and you read what the cube looks like from each direction with
+        one axis collapsed. They are shadows of the cloud — the same evaluations
+        projected onto each pair of axes. <em>Input × Version</em> on the back wall;
+        <em>Input × Environment</em> on the floor; <em>Version × Environment</em> on
+        the side wall.
+      </p>
+      <p>
+        <strong>How to read.</strong>
+        <code>x</code> is the horizontal axis: continuous inputs.
+        <code>v</code> is the vertical axis: one row per discrete model version.
+        <code>ω</code> is the depth axis: the discrete environments the system has
+        been evaluated under. Each point is one configuration evaluated, drawn from
+        production call logs, deliberate stress scenarios, or both. The walls are
+        shadows of those same points projected onto each pair of axes.
+      </p>
+    </div>
+
+    <div class="byline">
+      <span>Figure for "The Model Operator"</span>
+      <span>April 2026</span>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== three.js ===================== -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+/* =========================================================================
+   DATA — joint P(x, v, ω), sampled in-browser with a seeded PRNG.
+   ========================================================================= */
+
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return function () {
+    t = (t + 0x6d2b79f5) >>> 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(rng) {
+  let u = 0, v = 0;
+  while (u === 0) u = rng();
+  while (v === 0) v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+const rng = mulberry32(7);
+
+// P(v, ω) weights, rows = v = 0..7, cols = ω = 0..7 (a..h)
+const W = [
+  [8, 8, 9, 4, 1, 0, 0, 0],
+  [9, 6,10, 5, 3, 1, 0, 0],
+  [8, 7, 7, 5, 2, 2, 0, 0],
+  [2, 4, 5, 5, 4, 4, 1, 1],
+  [0, 0, 3, 6, 5, 4, 3, 2],
+  [0, 0, 0, 5, 4, 5, 4, 3],
+  [0, 0, 0, 1, 3, 4, 4, 3],
+  [0, 0, 0, 0, 1, 3, 3, 3],
+];
+const flatW = [];
+let totalW = 0;
+for (let v = 0; v < 8; v++) {
+  for (let o = 0; o < 8; o++) {
+    flatW.push(W[v][o]);
+    totalW += W[v][o];
+  }
+}
+const cdf = [];
+{
+  let c = 0;
+  for (const w of flatW) { c += w / totalW; cdf.push(c); }
+}
+function sampleVOmega() {
+  const r = rng();
+  let lo = 0, hi = 63;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (r < cdf[mid]) hi = mid; else lo = mid + 1;
+  }
+  return [Math.floor(lo / 8), lo % 8];
+}
+
+const BIMODAL = { 1: 1.4, 4: 1.6, 7: 0.8 };
+function sampleX(v, o) {
+  const base = 2.4 + 0.28 * v + 0.30 * o;
+  const curv = 0.6 * Math.sin(0.9 * v);
+  let mu = base + curv;
+  let sigma = 0.70 + 0.05 * (v % 2);
+  if (v in BIMODAL) {
+    const s = BIMODAL[v];
+    mu += (rng() < 0.55 ? -s : s);
+    sigma = 0.55;
+  }
+  return mu + sigma * gauss(rng);
+}
+
+const N = 18000;
+const samples = new Float32Array(N * 3);
+for (let i = 0; i < N; i++) {
+  const [v, o] = sampleVOmega();
+  const x = sampleX(v, o);
+  samples[3 * i + 0] = x;
+  samples[3 * i + 1] = v;
+  samples[3 * i + 2] = o;
+}
+
+/* =========================================================================
+   GEOMETRY
+   ========================================================================= */
+
+const BOX_W = 8;    // width  (Input)
+const BOX_H = 6;    // height (Version)
+const BOX_D = 6;    // depth  (Environment)
+
+function mapX(x) { return (x / 8) * BOX_W - BOX_W / 2; }
+function mapV(v) { return (v / 8) * BOX_H - BOX_H / 2; }
+function mapO(o) { return BOX_D / 2 - (o / 8) * BOX_D; }
+
+/* =========================================================================
+   DENSITY FIELDS FOR THE WALLS
+   ========================================================================= */
+
+function hist2D(xs, ys, xRange, yRange, nx, ny, bw) {
+  const grid = new Float32Array(nx * ny);
+  const [xmin, xmax] = xRange;
+  const [ymin, ymax] = yRange;
+  const dx = (xmax - xmin) / nx;
+  const dy = (ymax - ymin) / ny;
+  for (let i = 0; i < xs.length; i++) {
+    const xi = (xs[i] - xmin) / dx;
+    const yi = (ys[i] - ymin) / dy;
+    if (xi < 0 || xi >= nx || yi < 0 || yi >= ny) continue;
+    const ix = Math.floor(xi), iy = Math.floor(yi);
+    grid[iy * nx + ix] += 1;
+  }
+  const r = Math.max(1, Math.floor(bw * 3));
+  const kernel = [];
+  let ksum = 0;
+  for (let i = -r; i <= r; i++) {
+    const v = Math.exp(-0.5 * (i / bw) ** 2);
+    kernel.push(v); ksum += v;
+  }
+  for (let i = 0; i < kernel.length; i++) kernel[i] /= ksum;
+
+  const tmp = new Float32Array(nx * ny);
+  for (let y = 0; y < ny; y++) {
+    for (let x = 0; x < nx; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) {
+        const xx = Math.min(nx - 1, Math.max(0, x + k));
+        s += grid[y * nx + xx] * kernel[k + r];
+      }
+      tmp[y * nx + x] = s;
+    }
+  }
+  for (let y = 0; y < ny; y++) {
+    for (let x = 0; x < nx; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) {
+        const yy = Math.min(ny - 1, Math.max(0, y + k));
+        s += tmp[yy * nx + x] * kernel[k + r];
+      }
+      grid[y * nx + x] = s;
+    }
+  }
+  return grid;
+}
+
+function rowNormalize(grid, nx, ny) {
+  const out = new Float32Array(grid.length);
+  for (let y = 0; y < ny; y++) {
+    let m = 0;
+    for (let x = 0; x < nx; x++) m = Math.max(m, grid[y * nx + x]);
+    if (m <= 0) continue;
+    for (let x = 0; x < nx; x++) out[y * nx + x] = grid[y * nx + x] / m;
+  }
+  return out;
+}
+function globalNormalize(grid) {
+  const out = new Float32Array(grid.length);
+  let m = 0;
+  for (let i = 0; i < grid.length; i++) m = Math.max(m, grid[i]);
+  if (m <= 0) return out;
+  for (let i = 0; i < grid.length; i++) out[i] = grid[i] / m;
+  return out;
+}
+
+/* Quantized accent ramp.
+   Five hard-edged bins read as coverage levels: empty / rare / occasional /
+   frequent / dense. Color shifts from cream → light wash → accent red →
+   deep accent, matching the deck's accent palette. */
+function accentRamp(t) {
+  t = Math.max(0, Math.min(1, t));
+  const bins = [
+    [0.00, 0.04, [247, 243, 234,   0]],   // 0 — empty (page bg, transparent)
+    [0.04, 0.18, [232, 196, 198, 110]],   // 1 — rare (light red wash)
+    [0.18, 0.42, [206, 130, 132, 180]],   // 2 — occasional
+    [0.42, 0.72, [166,  23,  45, 225]],   // 3 — frequent (accent)
+    [0.72, 1.00, [ 92,  14,  28, 255]],   // 4 — dense (deep accent)
+  ];
+  for (const [lo, hi, c] of bins) {
+    if (t >= lo && t <= hi) return c.slice();
+  }
+  return bins[bins.length - 1][2].slice();
+}
+
+function drawDensityCanvas(canvas, grid, nx, ny, opts = {}) {
+  const { paper = [253, 252, 248] } = opts;
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = `rgb(${paper[0]},${paper[1]},${paper[2]})`;
+  ctx.fillRect(0, 0, W, H);
+  const img = ctx.createImageData(W, H);
+  for (let py = 0; py < H; py++) {
+    const gy = Math.floor(((H - 1 - py) / H) * ny);
+    for (let px = 0; px < W; px++) {
+      const gx = Math.floor((px / W) * nx);
+      const t = grid[gy * nx + gx];
+      const [r, g, b, a] = accentRamp(t);
+      const idx = (py * W + px) * 4;
+      const aa = a / 255;
+      img.data[idx + 0] = r * aa + paper[0] * (1 - aa);
+      img.data[idx + 1] = g * aa + paper[1] * (1 - aa);
+      img.data[idx + 2] = b * aa + paper[2] * (1 - aa);
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return ctx;
+}
+
+function buildTextures() {
+  const Xs = new Float32Array(N);
+  const Vs = new Float32Array(N);
+  const Os = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    Xs[i] = samples[3 * i];
+    Vs[i] = samples[3 * i + 1];
+    Os[i] = samples[3 * i + 2];
+  }
+
+  const NX = 256, NY_ROW = 64;
+  const grid_xv_raw = hist2D(
+    Xs, Vs.map(v => v + 0.5),
+    [0, 8], [0, 8], NX, NY_ROW, 2.2
+  );
+  const grid_xv = rowNormalize(grid_xv_raw, NX, NY_ROW);
+
+  const grid_xo_raw = hist2D(
+    Xs, Os.map(o => o + 0.5),
+    [0, 8], [0, 8], NX, NY_ROW, 2.2
+  );
+  const grid_xo = rowNormalize(grid_xo_raw, NX, NY_ROW);
+
+  const NG = 8;
+  const grid_vo = new Float32Array(NG * NG);
+  for (let i = 0; i < N; i++) {
+    grid_vo[Math.floor(Vs[i]) * NG + Math.floor(Os[i])] += 1;
+  }
+  const grid_vo_n = globalNormalize(grid_vo);
+
+  const wall_xv = document.createElement("canvas");
+  wall_xv.width = 1024; wall_xv.height = 768;
+  drawDensityCanvas(wall_xv, grid_xv, NX, NY_ROW);
+  striateV(wall_xv, 8, 0.18);
+
+  const wall_xo = document.createElement("canvas");
+  wall_xo.width = 1024; wall_xo.height = 768;
+  drawDensityCanvas(wall_xo, grid_xo, NX, NY_ROW);
+
+  const wall_vo = document.createElement("canvas");
+  wall_vo.width = 768; wall_vo.height = 768;
+  drawVOGrid(wall_vo, grid_vo_n);
+
+  return { wall_xv, wall_xo, wall_vo, grid_xv, grid_xo, grid_vo_n, NX, NY_ROW, NG };
+}
+
+function striateV(canvas, n_v = 8, slabFrac = 0.18) {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const bandH = H / n_v;
+  const slabH = bandH * slabFrac;
+  ctx.fillStyle = "rgba(253, 252, 248, 1.0)";
+  for (let i = 0; i < n_v; i++) {
+    const cy = (i + 0.5) * bandH;
+    const slabTop = cy - slabH / 2;
+    const slabBot = cy + slabH / 2;
+    if (slabTop > i * bandH) {
+      ctx.fillRect(0, i * bandH, W, slabTop - i * bandH);
+    }
+    if (slabBot < (i + 1) * bandH) {
+      ctx.fillRect(0, slabBot, W, (i + 1) * bandH - slabBot);
+    }
+  }
+}
+
+function drawVOGrid(canvas, grid) {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = "rgb(253, 252, 248)";
+  ctx.fillRect(0, 0, W, H);
+  const N = 8;
+  const cellW = W / N, cellH = H / N;
+  const pad = Math.max(2, cellW * 0.06);
+  for (let v = 0; v < N; v++) {
+    for (let o = 0; o < N; o++) {
+      const t = grid[v * N + o];
+      if (t < 0.02) continue;
+      const [r, g, b, a] = accentRamp(t);
+      ctx.fillStyle = `rgba(${r|0},${g|0},${b|0},${a/255})`;
+      const x = o * cellW + pad;
+      const y = (N - 1 - v) * cellH + pad;
+      ctx.fillRect(x, y, cellW - 2 * pad, cellH - 2 * pad);
+    }
+  }
+}
+
+const TEX = buildTextures();
+
+/* =========================================================================
+   THREE.JS SCENE
+   ========================================================================= */
+
+const hero = document.getElementById("hero");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#fdfcf8");
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
+camera.position.set(11, 7.5, 13);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(hero.clientWidth, hero.clientHeight);
+hero.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(hero.clientWidth, hero.clientHeight);
+labelRenderer.domElement.style.position = "absolute";
+labelRenderer.domElement.style.top = "0";
+labelRenderer.domElement.style.left = "0";
+labelRenderer.domElement.style.pointerEvents = "none";
+hero.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 0, 0);
+controls.minDistance = 9;
+controls.maxDistance = 30;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.25;
+controls.update();
+
+window.__controls = controls;
+window.__camera = camera;
+window.__scene = scene;
+window.__renderer = renderer;
+
+/* =========================================================================
+   VITRINE
+   ========================================================================= */
+
+const group = new THREE.Group();
+scene.add(group);
+
+{
+  const g = new THREE.BoxGeometry(BOX_W, BOX_H, BOX_D);
+  const edges = new THREE.EdgesGeometry(g);
+  const mat = new THREE.LineBasicMaterial({
+    color: 0xb9b1a0, transparent: true, opacity: 0.7,
+  });
+  group.add(new THREE.LineSegments(edges, mat));
+}
+
+function makeWall(canvas, size) {
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, opacity: 1.0, side: THREE.DoubleSide,
+  });
+  const g = new THREE.PlaneGeometry(size[0], size[1]);
+  const m = new THREE.Mesh(g, mat);
+  m.userData.kind = "wall";
+  return m;
+}
+
+const wallXV = makeWall(TEX.wall_xv, [BOX_W, BOX_H]);
+wallXV.position.set(0, 0, -BOX_D / 2 + 0.005);
+group.add(wallXV);
+
+const wallXO = makeWall(TEX.wall_xo, [BOX_W, BOX_D]);
+wallXO.rotation.x = -Math.PI / 2;
+wallXO.position.set(0, -BOX_H / 2 + 0.005, 0);
+group.add(wallXO);
+
+const wallVO = makeWall(TEX.wall_vo, [BOX_D, BOX_H]);
+wallVO.rotation.y = Math.PI / 2;
+wallVO.position.set(-BOX_W / 2 + 0.005, 0, 0);
+group.add(wallVO);
+
+/* =========================================================================
+   THE CLOUD
+   ========================================================================= */
+
+function makeSpriteTexture(size = 128) {
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  const r = size / 2;
+  const g = ctx.createRadialGradient(r, r, 0, r, r, r);
+  g.addColorStop(0.0, "rgba(255, 255, 255, 1.0)");
+  g.addColorStop(0.25, "rgba(255, 255, 255, 0.55)");
+  g.addColorStop(0.55, "rgba(255, 255, 255, 0.15)");
+  g.addColorStop(1.0, "rgba(255, 255, 255, 0.0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const positions = new Float32Array(N * 3);
+for (let i = 0; i < N; i++) {
+  const x = samples[3 * i + 0];
+  const v = samples[3 * i + 1];
+  const o = samples[3 * i + 2];
+  const vJ = v + 0.5 + 0.17 * (rng() - 0.5);
+  const oJ = o + 0.5 + 0.40 * (rng() - 0.5);
+  positions[3 * i + 0] = mapX(x);
+  positions[3 * i + 1] = mapV(vJ);
+  positions[3 * i + 2] = mapO(oJ);
+}
+
+const geo = new THREE.BufferGeometry();
+geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+const mat = new THREE.PointsMaterial({
+  size: 0.42,
+  map: makeSpriteTexture(128),
+  transparent: true,
+  opacity: 0.55,
+  blending: THREE.NormalBlending,
+  depthWrite: false,
+  sizeAttenuation: true,
+  // accent red — risk density accumulates as deeper red
+  color: new THREE.Color(0x7a1020),
+});
+
+const cloud = new THREE.Points(geo, mat);
+group.add(cloud);
+
+/* =========================================================================
+   AXES — ticks + labels
+   ========================================================================= */
+
+function makeLabel(text, cls = "tick") {
+  const el = document.createElement("div");
+  el.className = "label2d " + cls;
+  el.innerHTML = text;
+  const obj = new CSS2DObject(el);
+  return obj;
+}
+
+// Input ticks at integers 1..8
+for (let i = 1; i <= 8; i++) {
+  const L = makeLabel(String(i));
+  L.position.set(mapX(i), -BOX_H / 2 - 0.2, BOX_D / 2 + 0.25);
+  group.add(L);
+}
+
+// Version ticks 0..7
+for (let i = 0; i <= 7; i++) {
+  const L = makeLabel(String(i));
+  L.position.set(-BOX_W / 2 - 0.25, mapV(i + 0.5), BOX_D / 2 + 0.15);
+  group.add(L);
+}
+
+// Environment ticks a..h
+const letters = ["a","b","c","d","e","f","g","h"];
+for (let i = 0; i < 8; i++) {
+  const L = makeLabel(`${letters[i]}`);
+  L.position.set(BOX_W / 2 + 0.25, -BOX_H / 2 - 0.15, mapO(i + 0.5));
+  group.add(L);
+}
+
+// Axis titles — full names + variable in parens
+const xTitle = makeLabel('Input <span class="var">(x)</span>', "axis-title input");
+xTitle.position.set(-BOX_W / 2 - 1.0, -BOX_H / 2 - 0.35, BOX_D / 2 + 0.25);
+group.add(xTitle);
+
+const vTitle = makeLabel('Version <span class="var">(v)</span>', "axis-title version");
+vTitle.position.set(-BOX_W / 2 - 0.6, BOX_H / 2 + 0.45, BOX_D / 2);
+group.add(vTitle);
+
+const oTitle = makeLabel('Environment <span class="var">(ω)</span>', "axis-title env");
+oTitle.position.set(BOX_W / 2 + 0.35, -BOX_H / 2 - 0.35, -BOX_D / 2 - 0.6);
+group.add(oTitle);
+
+// Wall tags
+function wallLabel(text, pos) {
+  const el = document.createElement("div");
+  el.className = "label2d wall-label";
+  el.textContent = text;
+  const obj = new CSS2DObject(el);
+  obj.position.copy(pos);
+  return obj;
+}
+group.add(wallLabel(
+  "Input × Version",
+  new THREE.Vector3(0, BOX_H / 2 + 0.45, -BOX_D / 2)
+));
+group.add(wallLabel(
+  "Input × Environment",
+  new THREE.Vector3(0, -BOX_H / 2 - 0.65, BOX_D / 2 + 0.10)
+));
+group.add(wallLabel(
+  "Version × Environment",
+  new THREE.Vector3(-BOX_W / 2, BOX_H / 2 + 0.45, 0)
+));
+
+/* =========================================================================
+   MODE SWITCH
+   ========================================================================= */
+
+const modeBtns = {
+  both:    document.getElementById("mode-both"),
+  cloud:   document.getElementById("mode-cloud"),
+  shadows: document.getElementById("mode-shadows"),
+};
+function setMode(mode) {
+  Object.values(modeBtns).forEach(b => b.classList.remove("on"));
+  modeBtns[mode].classList.add("on");
+  const showCloud = (mode === "both" || mode === "cloud");
+  const showShadows = (mode === "both" || mode === "shadows");
+  cloud.visible = showCloud;
+  wallXV.visible = showShadows;
+  wallXO.visible = showShadows;
+  wallVO.visible = showShadows;
+}
+modeBtns.both.onclick    = () => setMode("both");
+modeBtns.cloud.onclick   = () => setMode("cloud");
+modeBtns.shadows.onclick = () => setMode("shadows");
+
+/* =========================================================================
+   RESIZE + ANIMATE
+   ========================================================================= */
+
+function onResize() {
+  const w = hero.clientWidth, h = hero.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  labelRenderer.setSize(w, h);
+}
+window.addEventListener("resize", onResize);
+onResize();
+
+function tick() {
+  requestAnimationFrame(tick);
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+tick();
+
+/* =========================================================================
+   REFERENCE CANVASES
+   ========================================================================= */
+
+function drawReferenceXV(canvas) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = canvas.clientWidth * dpr, H = canvas.clientHeight * dpr;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fdfcf8";
+  ctx.fillRect(0, 0, W, H);
+
+  const padL = 56 * dpr, padR = 18 * dpr, padT = 18 * dpr, padB = 42 * dpr;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const img = ctx.createImageData(plotW, plotH);
+  for (let py = 0; py < plotH; py++) {
+    const gy = Math.floor(((plotH - 1 - py) / plotH) * TEX.NY_ROW);
+    for (let px = 0; px < plotW; px++) {
+      const gx = Math.floor((px / plotW) * TEX.NX);
+      const t = TEX.grid_xv[gy * TEX.NX + gx];
+      const [r, g, b, a] = accentRamp(t);
+      const idx = (py * plotW + px) * 4;
+      const aa = a / 255;
+      img.data[idx + 0] = r * aa + 253 * (1 - aa);
+      img.data[idx + 1] = g * aa + 252 * (1 - aa);
+      img.data[idx + 2] = b * aa + 248 * (1 - aa);
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, padL, padT);
+
+  ctx.fillStyle = "rgba(253, 252, 248, 1.0)";
+  const rowH_xv = plotH / 8;
+  const slabH_xv = rowH_xv * 0.20;
+  for (let i = 0; i < 8; i++) {
+    const yTop = padT + (7 - i) * rowH_xv;
+    const yBot = padT + (8 - i) * rowH_xv;
+    const cy = (yTop + yBot) / 2;
+    const slabTop = cy - slabH_xv / 2;
+    const slabBot = cy + slabH_xv / 2;
+    if (slabTop > yTop) ctx.fillRect(padL, yTop, plotW, slabTop - yTop);
+    if (slabBot < yBot) ctx.fillRect(padL, slabBot, plotW, yBot - slabBot);
+  }
+
+  drawAxes(ctx, padL, padT, plotW, plotH, {
+    xTicks: [1, 2, 3, 4, 5, 6, 7, 8],
+    yTicks: [0, 1, 2, 3, 4, 5, 6, 7],
+    yLabels: null,
+    xLabel: "Input (x)",
+    yLabel: "Version (v)",
+    dpr,
+  });
+}
+
+function drawReferenceXO(canvas) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = canvas.clientWidth * dpr, H = canvas.clientHeight * dpr;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fdfcf8";
+  ctx.fillRect(0, 0, W, H);
+
+  const padL = 56 * dpr, padR = 18 * dpr, padT = 18 * dpr, padB = 42 * dpr;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const img = ctx.createImageData(plotW, plotH);
+  for (let py = 0; py < plotH; py++) {
+    const gy = Math.floor(((plotH - 1 - py) / plotH) * TEX.NY_ROW);
+    for (let px = 0; px < plotW; px++) {
+      const gx = Math.floor((px / plotW) * TEX.NX);
+      const t = TEX.grid_xo[gy * TEX.NX + gx];
+      const [r, g, b, a] = accentRamp(t);
+      const idx = (py * plotW + px) * 4;
+      const aa = a / 255;
+      img.data[idx + 0] = r * aa + 253 * (1 - aa);
+      img.data[idx + 1] = g * aa + 252 * (1 - aa);
+      img.data[idx + 2] = b * aa + 248 * (1 - aa);
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, padL, padT);
+
+  drawAxes(ctx, padL, padT, plotW, plotH, {
+    xTicks: [1, 2, 3, 4, 5, 6, 7, 8],
+    yTicks: [0, 1, 2, 3, 4, 5, 6, 7],
+    yLabels: letters,
+    xLabel: "Input (x)",
+    yLabel: "Environment (ω)",
+    dpr,
+  });
+}
+
+function drawReferenceVO(canvas) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = canvas.clientWidth * dpr, H = canvas.clientHeight * dpr;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fdfcf8";
+  ctx.fillRect(0, 0, W, H);
+
+  const padL = 56 * dpr, padR = 18 * dpr, padT = 18 * dpr, padB = 42 * dpr;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const NG = 8;
+  const cellW = plotW / NG, cellH = plotH / NG;
+  const pad = Math.max(2 * dpr, cellW * 0.06);
+
+  for (let v = 0; v < NG; v++) {
+    for (let o = 0; o < NG; o++) {
+      const t = TEX.grid_vo_n[v * NG + o];
+      if (t < 0.02) continue;
+      const [r, g, b, a] = accentRamp(t);
+      ctx.fillStyle = `rgba(${r|0},${g|0},${b|0},${a/255})`;
+      const x = padL + o * cellW + pad;
+      const y = padT + (NG - 1 - v) * cellH + pad;
+      ctx.fillRect(x, y, cellW - 2 * pad, cellH - 2 * pad);
+    }
+  }
+
+  // "No evidence" callout — outline an empty cell in deep accent
+  const callout_v = 7, callout_o = 0;
+  ctx.strokeStyle = "rgba(122, 16, 32, 0.95)";
+  ctx.lineWidth = 1.8 * dpr;
+  ctx.strokeRect(padL + callout_o * cellW + pad,
+                 padT + (NG - 1 - callout_v) * cellH + pad,
+                 cellW - 2 * pad, cellH - 2 * pad);
+
+  drawAxes(ctx, padL, padT, plotW, plotH, {
+    xTicks: [0, 1, 2, 3, 4, 5, 6, 7],
+    xLabels: letters,
+    yTicks: [0, 1, 2, 3, 4, 5, 6, 7],
+    yLabels: null,
+    xLabel: "Environment (ω)",
+    yLabel: "Version (v)",
+    centered: true,
+    dpr,
+  });
+}
+
+function drawAxes(ctx, padL, padT, plotW, plotH, opts) {
+  const { xTicks, yTicks, xLabels, yLabels, xLabel, yLabel, centered, dpr } = opts;
+  ctx.strokeStyle = "#1a1a1a";
+  ctx.lineWidth = 1 * dpr;
+
+  // Axes lines
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + plotH);
+  ctx.lineTo(padL + plotW, padT + plotH);
+  ctx.stroke();
+
+  ctx.fillStyle = "#6b6b6b";
+  ctx.font = `${10 * dpr}px "JetBrains Mono", "SF Mono", Menlo, monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+
+  // X ticks
+  for (let i = 0; i < xTicks.length; i++) {
+    const frac = centered
+      ? (xTicks[i] + 0.5) / xTicks.length
+      : (xTicks[i] - xTicks[0]) / (xTicks[xTicks.length - 1] - xTicks[0]);
+    const x = padL + frac * plotW;
+    ctx.beginPath();
+    ctx.moveTo(x, padT + plotH);
+    ctx.lineTo(x, padT + plotH + 4 * dpr);
+    ctx.stroke();
+    const lbl = xLabels ? xLabels[i] : String(xTicks[i]);
+    ctx.fillText(lbl, x, padT + plotH + 6 * dpr);
+  }
+
+  // Y ticks
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let i = 0; i < yTicks.length; i++) {
+    const frac = centered
+      ? (yTicks[i] + 0.5) / yTicks.length
+      : (yTicks[i] - yTicks[0]) / (yTicks[yTicks.length - 1] - yTicks[0]);
+    const y = padT + (1 - frac) * plotH;
+    ctx.beginPath();
+    ctx.moveTo(padL - 4 * dpr, y);
+    ctx.lineTo(padL, y);
+    ctx.stroke();
+    const lbl = yLabels ? yLabels[i] : String(yTicks[i]);
+    ctx.fillText(lbl, padL - 7 * dpr, y);
+  }
+
+  // Axis names — uppercase sans like the deck's axis labels
+  ctx.fillStyle = "#1a1a1a";
+  ctx.font = `700 ${10 * dpr}px "Source Sans 3", Helvetica, Arial, sans-serif`;
+  ctx.textAlign = "right"; ctx.textBaseline = "alphabetic";
+  // x-label at bottom-right
+  const xLabelText = xLabel.toUpperCase();
+  ctx.save();
+  ctx.fillText(spaceLetters(xLabelText), padL + plotW, padT + plotH + 28 * dpr);
+  ctx.restore();
+  // y-label rotated, sitting along the y axis
+  ctx.save();
+  ctx.translate(padL - 36 * dpr, padT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center";
+  ctx.fillText(spaceLetters(yLabel.toUpperCase()), 0, 0);
+  ctx.restore();
+}
+
+// Add letter-spacing visually by inserting hair-spaces — canvas doesn't honor
+// CSS letter-spacing, so we approximate the deck's tracked uppercase look.
+function spaceLetters(s) {
+  return s.split("").join(" ");
+}
+
+drawReferenceXV(document.getElementById("proj-xv"));
+drawReferenceXO(document.getElementById("proj-xo"));
+drawReferenceVO(document.getElementById("proj-vo"));
+
+window.addEventListener("resize", () => {
+  drawReferenceXV(document.getElementById("proj-xv"));
+  drawReferenceXO(document.getElementById("proj-xo"));
+  drawReferenceVO(document.getElementById("proj-vo"));
+});
+</script>
+</body>
+</html>

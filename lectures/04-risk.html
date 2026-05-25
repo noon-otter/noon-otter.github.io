@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lecture 04 — Risk surfaces · Nicholas Goble</title>
+<meta name="description" content="Models live inside a risk space. Governance is the practice of charting it." />
+<link rel="stylesheet" href="../site.css" />
+</head>
+<body data-accent="emerald">
+<div class="wrap-narrow">
+
+  <header class="site-header">
+    <div class="brand"><a href="../index.html">Nicholas Goble</a></div>
+    <nav>
+      <a href="../index.html">Lab</a>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <article>
+
+    <div class="lecture-meta">Lecture 04 · Risk</div>
+    <h1 class="lecture-title">Risk surfaces.</h1>
+    <p class="lecture-lead">Models do not have a risk; they live inside a risk space. The 3D portrait below is what governance is actually trying to chart — the surface over which a model's behaviour varies, the regions where coverage drops, where fidelity decays, where trust thins out.</p>
+
+    <figure class="lecture-embed">
+      <iframe src="../assets/models/risk-surface.html" loading="lazy" title="3D risk surface — interactive portrait of the surface over which model behaviour varies."></iframe>
+      <figcaption class="caption">
+        <span>Interactive: 3D risk surface</span>
+        <a href="../assets/models/risk-surface.html" class="inline" target="_blank" rel="noopener">Open in new tab ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="prose">
+
+      <h2>The space</h2>
+      <p class="draft">[DRAFT — your claim] A risk space is not a number. It is a many-dimensional region indexed by everything the operator's behaviour depends on: inputs the model accepts, distributions it was fit on, contexts it is deployed into, observers it is read by. A single risk number — a "model risk rating" — is a coarse projection of this space down to a scalar. Useful for triage, almost useless for understanding.</p>
+
+      <h2>The dimensions</h2>
+      <p class="draft">[DRAFT] At minimum the space carries: the input distribution (where in input space is the operator being asked to act), the context (which dataset / endpoint / agent is invoking it), and the observer (Lecture 02). Each axis is real and load-bearing. Collapsing them loses the structure that lets you reason about which kind of failure is which.</p>
+
+      <h2>The surface</h2>
+      <p class="draft">[DRAFT] On top of the space is a surface — the operator's behaviour at each point. Peaks where the model performs well; valleys where it doesn't; ridges where the gradient changes fast and small movements in input produce large movements in output. The shape of the surface is what you are governing. Not "the model"; the surface.</p>
+
+      <h2>Why a 3D portrait helps</h2>
+      <p class="draft">[DRAFT] Tables and risk ratings flatten the surface to a column of numbers. The 3D portrait keeps the surface intact long enough for you to notice things — clifs, valleys, plateaus, the topology of where trust holds and where it breaks. The interactive above is a deliberate exercise in not flattening too soon.</p>
+
+      <h2>What this lets governance be</h2>
+      <p class="draft">[DRAFT] Once the surface is the object, governance is cartography. You map it. You mark the places where the surface is steep and put guardrails there. You mark the places where it is flat and instrument them lightly. The "model risk policy" becomes a set of statements about regions of a surface, not a checklist applied uniformly to "the model." This is where the framework starts paying its way in practice.</p>
+
+    </div>
+
+    <nav class="lecture-nav">
+      <a class="prev" href="03-cycles.html">
+        <span class="dir">← Previous</span>
+        <span class="label">Lecture 03 · Cycles</span>
+      </a>
+      <a class="next disabled" aria-disabled="true">
+        <span class="dir">Next →</span>
+        <span class="label">(more lectures coming)</span>
+      </a>
+    </nav>
+
+  </article>
+
+  <footer class="site-footer">
+    <span>© Nicholas Goble · working drafts</span>
+    <span>nicholasgoble.com</span>
+  </footer>
+
+</div>
+</body>
+</html>
